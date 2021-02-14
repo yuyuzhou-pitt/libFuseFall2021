@@ -28,8 +28,6 @@
 #include <fuse.h>
 #include <limits.h>
 
-char base[PATH_MAX];
-
 int ntapfuse_getattr (const char *path, struct stat *buf);
 int ntapfuse_readlink (const char *path, char *target, size_t size);
 int ntapfuse_mknod (const char *path, mode_t mode, dev_t dev);

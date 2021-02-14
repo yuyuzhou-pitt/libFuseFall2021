@@ -30,6 +30,8 @@
 #include <string.h>
 #include <unistd.h>
 
+char base[PATH_MAX];
+
 struct fuse_operations ntapfuse_ops = {
   .getattr = ntapfuse_getattr,
   .readlink = ntapfuse_readlink,
