@@ -15,6 +15,7 @@ int check_action (const char *user, int size);
  * const char *user: string name of user to change total of
  * int size: size increase or decrease of total
  * returns 1 if successful, 0 if not successful
+ */
 int update_user_total (const char *user, int size);
 
 #endif
