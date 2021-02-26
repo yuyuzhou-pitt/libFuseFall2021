@@ -1,5 +1,5 @@
-#ifndef __HTABLE.H__
-#define __HTABLE.H__
+#ifndef _HTABLE_H_
+#define _HTABLE_H_
 
 struct htable;
 typedef struct htable htable_t;
@@ -9,10 +9,10 @@ typedef struct htable_enum htable_enum_t;
 
 // Function Callbacks for passed in functions
 typedef unsigned int (*htable_hash)(const void *in, unsigned int seed);
-typedef void *(*htable_kcopy)(void *in)
-typedef bool (*htable_keq)(const void *a, const void *b);
+typedef int (*htable_keq)(const void *a, const void *b);
+typedef void *(*htable_kcopy)(void *in);
 typedef void (*htable_kfree)(void *in);
-typedef void *(htable_vcopy)(void *in);
+typedef void *(*htable_vcopy)(void *in);
 typedef void (*htable_vfree)(void *in);
 
 typedef struct {
@@ -43,6 +43,7 @@ void htable_destroy(htable_t *ht);
  * void *val: value
  */
 void htable_insert(htable_t *ht, void *key, void *val);
+
 /*
  * Removes entry from hashtable
  * htable_t *ht: hashtable to remove from
@@ -59,9 +60,17 @@ void htable_remove(htable_t *ht, void *key);
  */
 int htable_get(htable_t *ht, void *key, void **val);
 
+/* 
+ * Updates value of key in hashtable
+ * htable_t *ht: hashtable
+ * void *key: key
+ * void *value: new value
+ */
+void htable_update(htable_t *ht, void *key, void *val);
+
 // Methods for enumerating through key-value pairs in hashtable
 htable_enum_t *htable_enum_create(htable_t *ht);
 int htable_enum_next(htable_enum_t *he, void **key, void **val);
 void htable_enum_destroy(htable_enum_t *he);
 
-#endif /*__HTABLE.H__*/
+#endif /*_HTABLE_H_*/
