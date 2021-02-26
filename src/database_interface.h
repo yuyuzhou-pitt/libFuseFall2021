@@ -1,5 +1,5 @@
-#ifndef database_interface.h
-#define database_interface.h
+#ifndef _DATABASE_INTERFACE_H_
+#define _DATABASE_INTERFACE_H_
 
 /* 
  * Returns total number of bytes used by given user
@@ -25,4 +25,4 @@ long user_quota(const char *user);
  */
 int change_user_total(const char *user, int size);
 
-#endif
+#endif /* _DATABASE_INTERFACE_H_*/
