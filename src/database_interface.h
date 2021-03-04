@@ -1,28 +1,34 @@
 #ifndef _DATABASE_INTERFACE_H_
 #define _DATABASE_INTERFACE_H_
 
-/* 
- * Returns total number of bytes used by given user
- * const char *user: string name of user to get total of
- * returns a number of bytes used, -1 if error occured
+#include <stdint.h>
+
+#include "common.h"
+
+/*
+ * Returns a user record
+ * const char *user: user to retrieve record for
+ * record **record: return record pointer
+ * returns 0 if successful, 1 if unsuccessful 
  */
-long user_total(const char *user);
-
-
-/* 
- * Returns user quota in bytes
- * const char *user: string name of user to get quota of
- * returns user byte quota, -1 if error occured
- */
-long user_quota(const char *user);
-
+int get_user_record(const char *user, record **record);
 
 /*
  * Changes the user total for given user
  * const char *user: string name of user to change total of
- * int size: size increase or decrease of user total
- * returns 1 if successful, 0 if unsuccessful
+ * int32_t total_change: change of total amount
+ * int32_t quota_change: change of quota amount
+ * returns 0 if successful, 1 if unsuccessful
  */
-int change_user_total(const char *user, int size);
+int change_user_record(const char *user, int32_t total_change, int32_t quota_change);
+
+/*
+ * Adds a record to the database
+ * const char *user: string name of user
+ * int64_t total: total bytes used by user
+ * int64_t quota: quota of user
+ * returns 0 if successful, 1 if unsuccessful
+ */
+int add_record(const char *user, int64_t total, int64_t quota);
 
 #endif /* _DATABASE_INTERFACE_H_*/
