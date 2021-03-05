@@ -12,12 +12,12 @@ char databaseFile[MAX_DATABASE_FILE_NAME_SIZE] = "database.csv";
 
 int find_block(const char *user, FILE *fp);
 int get_record_from_block(uint32_t block, FILE *fp, Record **record);
+void strip_whitespace(char *string);
 
 int get_user_record(const char *user, Record **record)
 {
 	FILE 		*fp;
 	uint32_t 	 block;
-	char 		 buffer[BLOCK_SIZE];
 	
 	fp = fopen(databaseFile, "r");
 	if (fp == NULL)
@@ -27,7 +27,7 @@ int get_user_record(const char *user, Record **record)
 	if (block < 0)
 		return 1;
 	
-	if (get_record_from_block(block, fp, record) != 0);
+	if (get_record_from_block(block, fp, record) != 0)
 		return 1;
 
 	fclose(fp);
@@ -55,7 +55,7 @@ int change_user_record(const char *user, int32_t total_change, int32_t quota_cha
 	if (fseek(fp, record->block * BLOCK_SIZE, SEEK_SET) != 0)
 		return 1;
 	
-	fprintf(fp, "%20.20s,%20.20lu,%20.20lu\n", record->user, record->total, record->quota);
+	fprintf(fp, "%-20.20s,%20.20lu,%20.20lu\n", record->user, record->total, record->quota);
 	fclose(fp);
 	return 0;
 }
@@ -68,7 +68,7 @@ int add_record(const char *user, int64_t total, int64_t quota)
 	if (fp == NULL)
 		return 1;
 	
-	if (fprintf(fp, "%20.20s,%20.20lu,%20.20lu\n", user, total, quota) !=  0)
+	if (fprintf(fp, "%-20.20s,%20.20lu,%20.20lu\n", user, total, quota) !=  0)
 		return 1;
 	
 	fclose(fp);
@@ -92,6 +92,7 @@ int find_block(const char *user, FILE *fp)
 
 	while (fgets(buffer, BLOCK_SIZE, fp) != NULL){
 		temp = strtok(buffer, ",");
+		strip_whitespace(temp);
 		if (strcmp(user, temp) == 0)
 			return i;
 		i++;
@@ -101,17 +102,31 @@ int find_block(const char *user, FILE *fp)
 
 int get_record_from_block(uint32_t block, FILE *fp, Record **record)
 {
-	char buffer[BLOCK_SIZE];
+	char  buffer[BLOCK_SIZE];
+	char *temp;
 
 	if (fseek(fp, block * BLOCK_SIZE, SEEK_SET) != 0)
 		return 1;
 	
-	if (fread((void *)buffer, BLOCK_SIZE, 1, fp) != BLOCK_SIZE);
+	if (fread((void *)buffer, BLOCK_SIZE, 1, fp) != BLOCK_SIZE)
 		return 1;
 
-	strncpy((*record)->user, strtok(buffer, ","), 20);
+	temp = strtok(buffer, ",");
+	strip_whitespace(temp);
+	strncpy((*record)->user, temp, sizeof((*record)->user));
 	(*record)->total = (uint64_t)strtoul(strtok(NULL, ","), NULL, 10);
 	(*record)->quota = (uint64_t)strtoul(strtok(NULL, ","), NULL, 10);
 	
 	return 0;
+}
+
+void strip_whitespace(char *string)
+{
+	int i;
+	for(i = 0; i < sizeof(string); i++){
+		if (string[i] ==  ' '){
+			string[i] = '\0';
+			return;
+		}
+	}
 }
