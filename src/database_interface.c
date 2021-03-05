@@ -8,6 +8,8 @@
 
 #define BLOCK_SIZE 63
 
+char databaseFile[MAX_DATABASE_FILE_NAME_SIZE] = "database.csv";
+
 int find_block(const char *user, FILE *fp);
 int get_record_from_block(uint32_t block, FILE *fp, Record **record);
 
@@ -17,7 +19,7 @@ int get_user_record(const char *user, Record **record)
 	uint32_t 	 block;
 	char 		 buffer[BLOCK_SIZE];
 	
-	fp = fopen("database.csv", "r");
+	fp = fopen(databaseFile, "r");
 	if (fp == NULL)
 		return 1;
 
@@ -39,7 +41,7 @@ int change_user_record(const char *user, int32_t total_change, int32_t quota_cha
 	Record  *record;
 	uint32_t block;
 	
-	fp = fopen("database.csv", "r+");
+	fp = fopen(databaseFile, "r+");
 
 	block = find_block(user, fp);
 
@@ -62,7 +64,7 @@ int add_record(const char *user, int64_t total, int64_t quota)
 {
 	FILE *fp;
 	
-	fp = fopen("database.csv", "a");
+	fp = fopen(databaseFile, "a");
 	if (fp == NULL)
 		return 1;
 	
@@ -70,6 +72,15 @@ int add_record(const char *user, int64_t total, int64_t quota)
 		return 1;
 	
 	fclose(fp);
+	return 0;
+}
+
+int change_databaseFile(const char *file_name)
+{
+	if (strlen(file_name) >= MAX_DATABASE_FILE_NAME_SIZE)
+		return 1;
+	
+	strncpy(databaseFile, file_name, MAX_DATABASE_FILE_NAME_SIZE);
 	return 0;
 }
 

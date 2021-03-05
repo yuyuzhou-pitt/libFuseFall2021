@@ -5,6 +5,8 @@
 
 #include "common.h"
 
+#define MAX_DATABASE_FILE_NAME_SIZE 20
+
 /*
  * Returns a user record
  * const char *user: user to retrieve record for
@@ -30,5 +32,13 @@ int change_user_record(const char *user, int32_t total_change, int32_t quota_cha
  * returns 0 if successful, 1 if unsuccessful
  */
 int add_record(const char *user, int64_t total, int64_t quota);
+
+/*
+ * Changes database target file
+ * const char *file_name: file name of new target file, must be less than
+ * MAX_DATABASE_FILE_NAME_SIZE
+ * returns 0 if successful, 1 if unsuccessful
+ */
+int change_databaseFile(const char *file_name);
 
 #endif /* _DATABASE_INTERFACE_H_*/
