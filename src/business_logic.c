@@ -1,16 +1,19 @@
-#include <business_logic.h>
-#include <database_interface.h>
+#include "common.h"
+#include "business_logic.h"
+#include "database_interface.h"
 
-int check_action (const char *user, int size){
-	long total = user_total(user);
-	long quota = user_quota(user);
-	if ((total + size) <= quota)
+int check_action (const char *user, int size_change){
+	Record *record;
+	
+	if (get_user_record(user, &record) != 0)
+		return 1;
+	
+	if ((record->total + size_change) <= record->quota)
 		return 1;
 	else 
 		return 0;
 }
 
-int update_user_total (const char *user, int size){
-	change_user_total(user, size);
-	return 1;
+int update_user_total (const char *user, int total_change){
+	return change_user_record(user, total_change, 0);
 }

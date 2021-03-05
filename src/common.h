@@ -3,11 +3,12 @@
 
 #include <stdint.h>
 
-typedef struct {
-	char[30] user;
+typedef struct Record
+{
+	char  user[20];
 	uint64_t total;
 	uint64_t quota;
 	uint32_t block;
-} record;
+} Record;
 
 #endif /*_COMMON_H_*/

@@ -11,7 +11,7 @@
  * record **record: return record pointer
  * returns 0 if successful, 1 if unsuccessful 
  */
-int get_user_record(const char *user, record **record);
+int get_user_record(const char *user, Record **record);
 
 /*
  * Changes the user total for given user
