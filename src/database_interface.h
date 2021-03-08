@@ -10,10 +10,10 @@
 /*
  * Returns a user record
  * const char *user: user to retrieve record for
- * record **record: return record pointer
+ * record *record: return record pointer
  * returns 0 if successful, 1 if unsuccessful 
  */
-int get_user_record(const char *user, Record **record);
+int get_user_record(const char *user, Record *record);
 
 /*
  * Changes the user total for given user
