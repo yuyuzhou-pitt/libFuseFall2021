@@ -99,7 +99,7 @@ int find_block(const char *user, FILE *fp)
 	char 	 buffer[BLOCK_SIZE];
 	char 	*temp;
 	printf("Username to find: %s\n", user);
-	while (fgets(buffer, BLOCK_SIZE+1, fp) != NULL){
+	while (fgets(buffer, BLOCK_SIZE, fp) != NULL){
 		temp = strtok(buffer, ",");
 		strip_whitespace(temp);
 		printf("Current user:%s block:%u\n", temp, i);
