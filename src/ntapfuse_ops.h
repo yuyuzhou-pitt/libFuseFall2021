@@ -64,4 +64,6 @@ int ntapfuse_releasedir (const char *path, struct fuse_file_info *fi);
 int ntapfuse_access (const char *path, int mode);
 void *ntapfuse_init (struct fuse_conn_info *conn);
 
+pthread_mutex_t lock;
+
 #endif /* NTAPFUSE_H */

@@ -29,6 +29,7 @@
 #include <limits.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include <sys/xattr.h>
 #include <sys/types.h>
@@ -37,6 +38,7 @@
  * Appends the path of the root filesystem to the given path, returning
  * the result in buf.
  */
+
 void
 fullpath (const char *path, char *buf)
 {
@@ -216,7 +218,11 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 {
   char fpath[PATH_MAX];
   fullpath (path, fpath);
-  log_data("write: \n\tPATH: %s\n\tSIZE: %lu\n\tOFFS: %lu\n",path, size, off);
+  
+  pthread_mutex_lock(&lock);
+	log_data("write: \n\tPATH: %s\n\tSIZE: %lu\n\tOFFS: %lu\n",path, size, off);
+  pthread_mutex_unlock(&lock);
+  
   return pwrite (fi->fh, buf, size, off) < 0 ? -errno : size;
 }
 
@@ -335,5 +341,7 @@ ntapfuse_access (const char *path, int mode)
 void *
 ntapfuse_init (struct fuse_conn_info *conn)
 {
+  
+  pthread_mutex_init(&lock, NULL);
   return (fuse_get_context())->private_data;
 }
