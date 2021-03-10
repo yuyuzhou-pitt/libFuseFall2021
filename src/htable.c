@@ -1,3 +1,25 @@
+/*
+		Copyright John Schember <john@nachtimwald.com>
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy of
+	this software and associated documentation files (the "Software"), to deal in
+	the Software without restriction, including without limitation the rights to
+	use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+	of the Software, and to permit persons to whom the Software is furnished to do
+	so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in all
+	copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+	SOFTWARE.
+*/
+
 #include <time.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -65,7 +87,7 @@ htable *htable_create(htable_hash hfunc, htable_keq keq, htable_cbs *cbs)
 	ht->cbs.key_free = htable_passthrough_destroy;
 	ht->cbs.val_copy = htable_passthrough_copy;
 	ht->cbs.val_free = htable_passthrough_destroy;
-	if (cbs != NULL){
+	if (cbs != NULL) {
 		if (cbs->key_copy != NULL) ht->cbs.key_copy = cbs->key_copy;
 		if (cbs->key_free != NULL) ht->cbs.key_free = cbs->key_free;
 		if (cbs->val_copy != NULL) ht->cbs.val_copy = cbs->val_copy;
@@ -86,12 +108,12 @@ void htable_destroy(htable *ht)
 {
 	htable_bucket *next;
 	htable_bucket *cur;
-	size_t 		 i;
+	size_t 	       i;
 
 	if (ht == NULL)
 		return;
 
-	for (i=0; i < ht->num_buckets; i++){
+	for (i=0; i < ht->num_buckets; i++) {
 		if (ht->buckets[i].key == NULL)
 			continue;	
 		
@@ -137,12 +159,12 @@ void rehash(htable *ht)
 	ht->num_buckets <<= 1;
 	ht->buckets = calloc(ht->num_buckets, sizeof(*buckets));
 	
-	for(i=0; i < num_buckets; i++){
+	for(i=0; i < num_buckets; i++) {
 		if (buckets[i].key == NULL)
 			continue;
 
 		htable_add_to_bucket(ht, buckets[i].key, buckets[i].val, true);
-		if (buckets[i].next != NULL){
+		if (buckets[i].next != NULL) {
 			cur = buckets[i].next;
 			do {
 				htable_add_to_bucket(ht, cur->key, cur->val, true);
@@ -163,7 +185,7 @@ void htable_add_to_bucket(htable *ht, void *key, void *val, bool isrehash)
 	size_t	       idx;
 
 	idx = htable_bucket_idx(ht, key);
-	if (ht->buckets[idx].key == NULL){
+	if (ht->buckets[idx].key == NULL) {
 		if (!isrehash) {
 			key = ht->cbs.key_copy(key);
 			if (val != NULL)
@@ -205,11 +227,12 @@ void htable_add_to_bucket(htable *ht, void *key, void *val, bool isrehash)
 		}
 	}
 }
+
 void htable_remove(htable *ht, void *key)
 {
 	htable_bucket *cur;
 	htable_bucket *prev;
-	size_t 		 idx;
+	size_t 	       idx;
 	
 	if (ht == NULL || key == NULL)
 		return;
@@ -218,7 +241,7 @@ void htable_remove(htable *ht, void *key)
 	if (ht->buckets[idx].key == NULL)
 		return;
 
-	if (ht->keq(ht->buckets[idx].key, key)){
+	if (ht->keq(ht->buckets[idx].key, key)) {
 		ht->cbs.key_free(ht->buckets[idx].key);
 		ht->cbs.val_free(ht->buckets[idx].val);
 		ht->buckets[idx].key = NULL;
@@ -254,7 +277,7 @@ void htable_remove(htable *ht, void *key)
 bool htable_get(htable *ht, void *key, void **val)
 {
 	htable_bucket *cur;
-	size_t		 idx;
+	size_t	       idx;
 
 	if ( ht == NULL || key == NULL)
 		return false;
@@ -278,7 +301,7 @@ bool htable_get(htable *ht, void *key, void **val)
 
 void htable_update(htable *ht, void *key, void *val){
 	htable_bucket *cur;
-	size_t		 idx;
+	size_t	       idx;
 
 	if (ht == NULL || key == NULL)
 		return;
@@ -289,7 +312,7 @@ void htable_update(htable *ht, void *key, void *val){
 
 	cur = ht->buckets+idx;
 	while (cur != NULL) {
-		if (ht->keq(cur->key, key)){
+		if (ht->keq(cur->key, key)) {
 			if (cur->val != NULL)
 				ht->cbs.val_free(cur->val);
 			if ( val != NULL)
