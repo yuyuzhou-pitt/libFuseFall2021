@@ -1,9 +1,8 @@
 /* TODO
- * 1. Make sure it works
- * 2. Testing edge cases to make sure all strings are null-terminated
- * 3. Add some sort of concurrency protection. I(Greg) has some ideas tha may or may not work.
- * 4. Add caching
- * 5. Maybe binary search on file as a stretch goal
+ * 1. Testing edge cases to make sure all strings are null-terminated
+ * 2. Add some sort of concurrency protection. I(Greg) has some ideas tha may or may not work.
+ * 3. Add caching
+ * 4. Maybe binary search on file as a stretch goal
  */
 
 #include <stdint.h>
