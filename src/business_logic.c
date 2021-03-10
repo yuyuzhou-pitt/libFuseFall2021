@@ -15,5 +15,9 @@ int check_action (const char *user, int size_change){
 }
 
 int update_user_total (const char *user, int total_change){
-	return change_user_record(user, total_change, 0);
+	if(change_user_record(user, total_change, 0) == 0){
+		return 0;
+	}
+
+	return add_record(user, total_change, DEFAULT_QUOTA);
 }

@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+// Default quota size is 1 MB
+#define DEFAULT_QUOTA 1048576
+
 typedef struct Record
 {
 	char  user[21];
