@@ -1,5 +1,5 @@
-#ifndef business_logic.h
-#define business_logic.h
+#ifndef _BUSINESS_LOGIC_H_
+#define _BUSINESS_LOGIC_H_
 
 /*
  * Checks if given user to allowed to do action depending
@@ -18,4 +18,4 @@ int check_action (const char *user, int size);
  */
 int update_user_total (const char *user, int size);
 
-#endif
+#endif /*_BUSINESS_LOGIC_H_*/
