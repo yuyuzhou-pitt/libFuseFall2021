@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "htable.h"
 #include "htable_data_cache.h"
@@ -8,7 +9,7 @@
 static unsigned int fnv1a_hash_str(const void *in, unsigned int seed);
 static int htable_str_eq(const void *a, const void *b);
 
-htable_data_cache_t *htable_data_cache_create()
+htable_data_cache *htable_data_cache_create()
 {
 	htable_hash hash = fnv1a_hash_str;
 	htable_keq keq = htable_str_eq;
@@ -19,47 +20,47 @@ htable_data_cache_t *htable_data_cache_create()
 		free
 	};
 	
-	return (htable_data_cache_t *)htable_create(hash, keq, &cbs);
+	return (htable_data_cache *)htable_create(hash, keq, &cbs);
 }
 
-void htable_data_cache_destroy(htable_data_cache_t *ht)
+void htable_data_cache_destroy(htable_data_cache *ht)
 {
-	htable_destroy((htable_t *)ht);
+	htable_destroy((htable *)ht);
 }
 
-void htable_data_cache_insert(htable_data_cache_t *ht, const char *key, Record *val)
+void htable_data_cache_insert(htable_data_cache *ht, const char *key, Record *val)
 {
-	htable_insert((htable_t *)ht, (void *)key, (void *)val);
+	htable_insert((htable *)ht, (void *)key, (void *)val);
 }
 
-void htable_data_cache_remove(htable_data_cache_t *ht, const char *key)
+void htable_data_cache_remove(htable_data_cache *ht, const char *key)
 {
-	htable_remove((htable_t *)ht, (void *)key);
+	htable_remove((htable *)ht, (void *)key);
 }
 
-int htable_data_cache_get(htable_data_cache_t *ht, const char *key, Rcord **val)
+bool htable_data_cache_get(htable_data_cache *ht, const char *key, Record **val)
 {
-	return htable_get((htable_t *)ht, (void *)key, (void *)val);
+	return htable_get((htable *)ht, (void *)key, (void *)val);
 }
 
-void htable_data_cache_update(htable_data_cache_t *ht, const char *key, Record *val)
+void htable_data_cache_update(htable_data_cache *ht, const char *key, Record *val)
 {
-	htable_update((htable_t *)ht, (void *)key, (void *)val);
+	htable_update((htable *)ht, (void *)key, (void *)val);
 }
 
-htable_data_cache_t *htable_data_cache_enum_create(htable_data_cache_t *ht)
+htable_data_cache_enum *htable_data_cache_enum_create(htable_data_cache *ht)
 {
-	return (htable_data_cache_enum_t *)htable_enum_create((htable_t *)ht);
+	return (htable_data_cache_enum *)htable_enum_create((htable *)ht);
 }
 
-int htable_data_cache_enum_next(htable_data_cache_t *he, const char **key, Record **val)
+bool htable_data_cache_enum_next(htable_data_cache_enum *he, const char **key, Record **val)
 {
-	return htable_enum_next((htable_enum_t *)he, (void **)key, (void **)val;
+	return htable_enum_next((htable_enum *)he, (void **)key, (void **)val);
 }
 
-void htable_data_cache_enum_destroy(htable_data_cache_t *he)
+void htable_data_cache_enum_destroy(htable_data_cache_enum *he)
 {
-	htable_enum_destroy((htable_enum_t *)he);
+	htable_enum_destroy((htable_enum *)he);
 }
 
 static unsigned int fnv1a_hash_str_int(const void *in, size_t len, unsigned int seed)

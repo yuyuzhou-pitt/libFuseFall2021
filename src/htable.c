@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "htable.h"
 
@@ -10,30 +11,30 @@ struct htable_bucket {
 	void *val;
 	struct htable_bucket *next;
 };
-typedef struct htable_bucket htable_bucket_t;
+typedef struct htable_bucket htable_bucket;
 
 struct htable {
 	htable_hash	 hfunc;
 	htable_keq	 keq;
 	htable_cbs	 cbs;
-	htable_bucket_t *buckets;
+	htable_bucket *buckets;
 	size_t 		 num_buckets;
 	size_t 		 num_used;
 	unsigned int     seed;
 };
 
 struct htable_enum {
-	htable_t	*ht;
-	htable_bucket_t *cur;
+	htable	*ht;
+	htable_bucket *cur;
 	size_t		 idx;
 };
 
 static const size_t BUCKET_START = 16;
 
-void rehash(htable_t *ht);
-void htable_add_to_bucket(htable_t *ht, void *key, void *val, int isrehash);
+void rehash(htable *ht);
+void htable_add_to_bucket(htable *ht, void *key, void *val, bool isrehash);
 
-static size_t htable_bucket_idx(htable_t *ht, void *key)
+static size_t htable_bucket_idx(htable *ht, void *key)
 {
 	return ht->hfunc(key, ht->seed) % ht->num_buckets;
 }
@@ -48,14 +49,14 @@ static void htable_passthrough_destroy(void *v)
 	return;
 }
 
-htable_t *htable_create(htable_hash hfunc, htable_keq keq, htable_cbs *cbs)
+htable *htable_create(htable_hash hfunc, htable_keq keq, htable_cbs *cbs)
 {
-	htable_t *ht;
+	htable *ht;
 
 	if (hfunc == NULL || keq == NULL)
 		return NULL;
 
-	ht = calloc(1,sizeof(*ht));
+	ht = calloc(1, sizeof(*ht));
 
 	ht->hfunc = hfunc;
 	ht->keq = keq;
@@ -81,10 +82,10 @@ htable_t *htable_create(htable_hash hfunc, htable_keq keq, htable_cbs *cbs)
 	return ht;
 }
 
-void htable_destroy(htable_t *ht)
+void htable_destroy(htable *ht)
 {
-	htable_bucket_t *next;
-	htable_bucket_t *cur;
+	htable_bucket *next;
+	htable_bucket *cur;
 	size_t 		 i;
 
 	if (ht == NULL)
@@ -93,14 +94,15 @@ void htable_destroy(htable_t *ht)
 	for (i=0; i < ht->num_buckets; i++){
 		if (ht->buckets[i].key == NULL)
 			continue;	
+		
 		ht->cbs.key_free(ht->buckets[i].key);
 		ht->cbs.val_free(ht->buckets[i].val);
-	
+		
 		next = ht->buckets[i].next;
 		while (next != NULL) {
 			cur = next;
-			ht->cbs.key_free(ht->buckets[i].key);
-			ht->cbs.val_free(ht->buckets[i].val);
+			ht->cbs.key_free(cur->key);
+			ht->cbs.val_free(cur->val);
 			next = cur->next;
 			free(cur);
 		}
@@ -110,22 +112,22 @@ void htable_destroy(htable_t *ht)
 	free(ht);
 }
 
-void htable_insert(htable_t *ht, void *key, void *val)
+void htable_insert(htable *ht, void *key, void *val)
 {
 	if (ht == NULL || key == NULL)
 		return;
 
 	rehash(ht);
-	htable_add_to_bucket(ht, key, val, 0);
+	htable_add_to_bucket(ht, key, val, false);
 }
 
-void rehash(htable_t *ht)
+void rehash(htable *ht)
 {
-	htable_bucket_t *buckets;
-	htable_bucket_t *cur;
-	htable_bucket_t *next;
-	size_t 		 num_buckets;
-	size_t		 i;
+	htable_bucket *buckets;
+	htable_bucket *cur;
+	htable_bucket *next;
+	size_t 	       num_buckets;
+	size_t	       i;
 
 	if (ht->num_used+1 < (size_t)(ht->num_buckets*0.75) || ht->num_buckets >= 1<<31)
 		return;
@@ -133,17 +135,17 @@ void rehash(htable_t *ht)
 	buckets = ht->buckets;
 	num_buckets = ht->num_buckets;
 	ht->num_buckets <<= 1;
-	ht->buckets = calloc(ht->num_buckets, sizeof(*ht->buckets));
+	ht->buckets = calloc(ht->num_buckets, sizeof(*buckets));
 	
 	for(i=0; i < num_buckets; i++){
 		if (buckets[i].key == NULL)
 			continue;
-		htable_add_to_bucket(ht, buckets[i].key, buckets[i].val, 1);
 
+		htable_add_to_bucket(ht, buckets[i].key, buckets[i].val, true);
 		if (buckets[i].next != NULL){
 			cur = buckets[i].next;
 			do {
-				htable_add_to_bucket(ht, cur->key, cur->val, 1);
+				htable_add_to_bucket(ht, cur->key, cur->val, true);
 				next = cur-> next;
 				free(cur);
 				cur = next;
@@ -154,11 +156,11 @@ void rehash(htable_t *ht)
 	free(buckets);
 }
 
-void htable_add_to_bucket(htable_t *ht, void *key, void *val, int isrehash)
+void htable_add_to_bucket(htable *ht, void *key, void *val, bool isrehash)
 {
-	htable_bucket_t *cur;
-	htable_bucket_t *prev;
-	size_t		 idx;
+	htable_bucket *cur;
+	htable_bucket *prev;
+	size_t	       idx;
 
 	idx = htable_bucket_idx(ht, key);
 	if (ht->buckets[idx].key == NULL){
@@ -178,7 +180,7 @@ void htable_add_to_bucket(htable_t *ht, void *key, void *val, int isrehash)
 			if (ht->keq(key, cur->key)){
 				if (cur->val != NULL)
 					ht->cbs.val_free(cur->val);
-				if (!rehash && val != NULL)
+				if (!isrehash && val != NULL)
 					val = ht->cbs.val_copy(val);
 				cur->val = val;
 				prev = NULL;
@@ -203,10 +205,10 @@ void htable_add_to_bucket(htable_t *ht, void *key, void *val, int isrehash)
 		}
 	}
 }
-void htable_remove(htable_t *ht, void *key)
+void htable_remove(htable *ht, void *key)
 {
-	htable_bucket_t *cur;
-	htable_bucket_t *prev;
+	htable_bucket *cur;
+	htable_bucket *prev;
 	size_t 		 idx;
 	
 	if (ht == NULL || key == NULL)
@@ -249,24 +251,24 @@ void htable_remove(htable_t *ht, void *key)
 	}
 }
 
-int htable_get(htable_t *ht, void *key, void **val)
+bool htable_get(htable *ht, void *key, void **val)
 {
-	htable_bucket_t *cur;
+	htable_bucket *cur;
 	size_t		 idx;
 
 	if ( ht == NULL || key == NULL)
-		return 0;
+		return false;
 
 	idx = htable_bucket_idx(ht, key);
 	if (ht->buckets[idx].key == NULL)
-		return 0;
+		return false;
 
 	cur = ht->buckets+idx;
 	while (cur != NULL) {
 		if (ht->keq(cur->key, key)){
 			if (val != NULL)
 				*val = cur->val;
-			return 1;
+			return true;
 		}
 		cur = cur->next;
 	}
@@ -274,8 +276,8 @@ int htable_get(htable_t *ht, void *key, void **val)
 	return 0;
 }
 
-void htable_update(htable_t *ht, void *key, void *val){
-	htable_bucket_t *cur;
+void htable_update(htable *ht, void *key, void *val){
+	htable_bucket *cur;
 	size_t		 idx;
 
 	if (ht == NULL || key == NULL)
@@ -299,9 +301,9 @@ void htable_update(htable_t *ht, void *key, void *val){
 	}
 }
 
-htable_enum_t *htable_enum_create(htable_t *ht)
+htable_enum *htable_enum_create(htable *ht)
 {
-    htable_enum_t *he;
+    htable_enum *he;
 
     if (ht == NULL)
         return NULL;
@@ -312,13 +314,13 @@ htable_enum_t *htable_enum_create(htable_t *ht)
     return he;
 }
 
-int htable_enum_next(htable_enum_t *he, void **key, void **val)
+bool htable_enum_next(htable_enum *he, void **key, void **val)
 {
     void *mykey;
     void *myval;
 
     if (he == NULL || he->idx >= he->ht->num_buckets)
-        return 0;
+        return false;
 
     if (key == NULL)
         key = &mykey;
@@ -330,7 +332,7 @@ int htable_enum_next(htable_enum_t *he, void **key, void **val)
             he->idx++;
         }
         if (he->idx >= he->ht->num_buckets)
-            return 0;
+            return false;
         he->cur = he->ht->buckets+he->idx;
         he->idx++;
     }
@@ -339,10 +341,10 @@ int htable_enum_next(htable_enum_t *he, void **key, void **val)
     *val = he->cur->val;
     he->cur = he->cur->next;
 
-    return 1;
+    return true;
 }
 
-void htable_enum_destroy(htable_enum_t *he)
+void htable_enum_destroy(htable_enum *he)
 {
 	if (he == NULL)
 		return;
