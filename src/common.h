@@ -5,7 +5,7 @@
 
 typedef struct Record
 {
-	uint32_t  user;
+	char  user[21];
 	uint64_t total;
 	uint64_t quota;
 	uint32_t block;

@@ -229,17 +229,21 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 {
   char fpath[PATH_MAX];
   fullpath (path, fpath);
+
   log_data(fi->fh, "write: \n\tPATH: %s\n\tSIZE: %lu\n\tOFFS: %lu\n",path, size, off);
 
+  char str[20];
   int uid = get_owner(fi->fh);
-  if(check_action(uid, size) == 1){
+  sprintf(str, "%u", uid);
+
+  if(check_action(str, size) == 1){
     int return_size = pwrite (fi->fh, buf, size, off);
     if(return_size < 0){
       return -errno;
     }
 
     log_data(fi->fh, "SUCCESSFUL CHECK 3\n");
-    update_user_total(uid, return_size);
+    update_user_total(str, return_size);
     log_data(fi->fh, "SUCCESSFUL CHECK 4\n");
     return return_size;
   }
@@ -367,3 +371,4 @@ ntapfuse_init (struct fuse_conn_info *conn)
 {
   return (fuse_get_context())->private_data;
 }
+
