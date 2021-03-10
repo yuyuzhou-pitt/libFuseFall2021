@@ -8,7 +8,7 @@
  * int size: needed size increase or decrease for action
  * returns 1 if action is allowed, 0 if not allowed
  */
-int check_action (const char *user, int size_change);
+int check_action (uint32_t  user, int size_change);
 
 /*
  * Updates user total in database
@@ -16,6 +16,6 @@ int check_action (const char *user, int size_change);
  * int size: size increase or decrease of total
  * returns 0 if successful, 1 if not successful
  */
-int update_user_total (const char *user, int total_change);
+int update_user_total (uint32_t  user, int total_change);
 
 #endif /*_BUSINESS_LOGIC_H_*/

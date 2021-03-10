@@ -21,6 +21,7 @@
 #define _XOPEN_SOURCE 500
 
 #include "ntapfuse_ops.h"
+#include "business_logic.h"
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -32,6 +33,8 @@
 
 #include <sys/xattr.h>
 #include <sys/types.h>
+
+#include <sys/stat.h>
 
 /**
  * Appends the path of the root filesystem to the given path, returning
@@ -46,18 +49,28 @@ fullpath (const char *path, char *buf)
   strcat (buf, path);
 }
 
+uid_t
+get_owner(int fd){
+  struct stat sb;
+  int re = fstat(fd, &sb);
+  return (re == -1)? -1 : sb.st_uid;
+}
+
 void
-log_data(const char * format, ...){
+log_data(int fd, const char * format, ...){
     
   char fpath[PATH_MAX];
-  const char* path = "/../log.txt";
-  fullpath (path, fpath);
+  const char* lpath = "/../log.txt";
+  fullpath (lpath, fpath);
   FILE * fp = fopen(fpath, "a");    
 
   va_list args;
   va_start(args, format);
   vfprintf(fp, format, args);
   va_end(args);
+
+  fprintf(fp, "\tUSER %d\n", get_owner(fd));
+
   fclose(fp);
 }
 
@@ -216,8 +229,25 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 {
   char fpath[PATH_MAX];
   fullpath (path, fpath);
-  log_data("write: \n\tPATH: %s\n\tSIZE: %lu\n\tOFFS: %lu\n",path, size, off);
-  return pwrite (fi->fh, buf, size, off) < 0 ? -errno : size;
+  log_data(fi->fh, "write: \n\tPATH: %s\n\tSIZE: %lu\n\tOFFS: %lu\n",path, size, off);
+
+  int uid = get_owner(fi->fh);
+  if(check_action(uid, size) == 1){
+    int return_size = pwrite (fi->fh, buf, size, off);
+    if(return_size < 0){
+      return -errno;
+    }
+
+    log_data(fi->fh, "SUCCESSFUL CHECK 3\n");
+    update_user_total(uid, return_size);
+    log_data(fi->fh, "SUCCESSFUL CHECK 4\n");
+    return return_size;
+  }
+  else {
+    // User's disk quota has been reached
+    log_data(fi->fh, "SUCCESSFUL CHECK 2\n");
+    return EDQUOT;
+  }
 }
 
 int

@@ -2,7 +2,7 @@
 #include "business_logic.h"
 #include "database_interface.h"
 
-int check_action (const char *user, int size_change){
+int check_action (uint32_t  user, int size_change){
 	Record *record;
 	
 	if (get_user_record(user, record) != 0)
@@ -14,6 +14,6 @@ int check_action (const char *user, int size_change){
 		return 0;
 }
 
-int update_user_total (const char *user, int total_change){
+int update_user_total (uint32_t  user, int total_change){
 	return change_user_record(user, total_change, 0);
 }
