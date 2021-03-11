@@ -39,6 +39,8 @@
  * the result in buf.
  */
 
+pthread_mutex_t lock;
+
 void
 fullpath (const char *path, char *buf)
 {
@@ -61,6 +63,12 @@ log_data(const char * format, ...){
   vfprintf(fp, format, args);
   va_end(args);
   fclose(fp);
+}
+
+void
+ntapfuse_destroy (void *private_data)
+{
+	pthread_mutex_destroy(&lock);
 }
 
 /* The following functions describe FUSE operations. Each operation appends
