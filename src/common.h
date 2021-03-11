@@ -3,15 +3,11 @@
 
 #include <stdint.h>
 
-// Default quota size is 1 MB
-#define DEFAULT_QUOTA 1048576
+//// Default quota size is 1 MB
+// #define DEFAULT_USAGE_QUOTA 1048576
+#define DEFAULT_USAGE_QUOTA 100
+// The default user can create 1000 files
+#define DEFAULT_FILE_QUOTA 1000
 
-typedef struct Record
-{
-	char  user[21];
-	uint64_t total;
-	uint64_t quota;
-	uint32_t block;
-} Record;
 
 #endif /*_COMMON_H_*/

@@ -57,7 +57,7 @@ get_owner(int fd){
 }
 
 void
-log_data(int fd, const char * format, ...){
+log_data(const char * format, ...){
     
   char fpath[PATH_MAX];
   const char* lpath = "/../log.txt";
@@ -68,8 +68,6 @@ log_data(int fd, const char * format, ...){
   va_start(args, format);
   vfprintf(fp, format, args);
   va_end(args);
-
-  fprintf(fp, "\tUSER %d\n", get_owner(fd));
 
   fclose(fp);
 }
@@ -230,26 +228,22 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
-  log_data(fi->fh, "write: \n\tPATH: %s\n\tSIZE: %lu\n\tOFFS: %lu\n",path, size, off);
 
-  char str[20];
   int uid = get_owner(fi->fh);
-  sprintf(str, "%u", uid);
 
-  if(check_action(str, size) == 1){
+  if(reserve_space(uid, size)){
     int return_size = pwrite (fi->fh, buf, size, off);
     if(return_size < 0){
       return -errno;
     }
 
-    log_data(fi->fh, "SUCCESSFUL CHECK 3\n");
-    update_user_total(str, return_size);
-    log_data(fi->fh, "SUCCESSFUL CHECK 4\n");
+    log_data("write: \n\tPATH: %s\n\tSIZE: %lu\n\tOFFS: %lu\n", path, return_size, off);
+    update_reservation(uid, size, return_size);
     return return_size;
   }
   else {
     // User's disk quota has been reached
-    log_data(fi->fh, "SUCCESSFUL CHECK 2\n");
+    log_data("QUOTA has been reached!\n");
     return EDQUOT;
   }
 }
@@ -369,6 +363,7 @@ ntapfuse_access (const char *path, int mode)
 void *
 ntapfuse_init (struct fuse_conn_info *conn)
 {
+  db_init(":memory:");
   return (fuse_get_context())->private_data;
 }
 
