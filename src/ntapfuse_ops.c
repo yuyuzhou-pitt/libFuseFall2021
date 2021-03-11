@@ -49,8 +49,22 @@ fullpath (const char *path, char *buf)
   strcat (buf, path);
 }
 
-uid_t
-get_owner(int fd){
+uint64_t
+get_filesize(const char *path){
+  struct stat sb;
+  int re = stat(path, &sb);
+  return (re == -1)? -1 : sb.st_size;
+}
+
+uint64_t
+get_owner(const char *path){
+  struct stat sb;
+  int re = stat(path, &sb);
+  return (re == -1)? -1 : sb.st_uid;
+}
+
+uint64_t
+get_owner_fd(int fd){
   struct stat sb;
   int re = fstat(fd, &sb);
   return (re == -1)? -1 : sb.st_uid;
@@ -112,13 +126,24 @@ ntapfuse_mkdir (const char *path, mode_t mode)
   return mkdir (fpath, mode | S_IFDIR) ? -errno : 0;
 }
 
+// Not fully working yet
 int
 ntapfuse_unlink (const char *path)
 {
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
-  return unlink (fpath) ? -errno : 0;
+  int uid = get_owner(path);
+  int fsize = get_filesize(path);
+  if(unlink (fpath) == 0){
+    log_data("unlink: \n\tPATH: %s\n\tSIZE: %d\n", path, -fsize);
+    add_usage_record(uid, -fsize);
+    return 0;
+  }
+  else {
+    return -errno;
+  }
+
 }
 
 int
@@ -172,6 +197,7 @@ ntapfuse_chmod (const char *path, mode_t mode)
   return chmod (fpath, mode) ? -errno : 0;
 }
 
+// Need to change to affect the user_quota of the new owner
 int
 ntapfuse_chown (const char *path, uid_t uid, gid_t gid)
 {
@@ -187,7 +213,16 @@ ntapfuse_truncate (const char *path, off_t off)
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
-  return truncate (fpath, off) ? -errno : 0;
+  int uid = get_owner(path);
+  int fsize = get_filesize(path);
+  if(truncate (fpath, off) == 0){
+    log_data("truncate: \n\tPATH: %s\n\tSIZE: %d\n", path, off - fsize);
+    add_usage_record(uid, off - fsize);
+    return 0;
+  }
+  else {
+    return -errno;
+  }
 }
 
 int
@@ -229,10 +264,10 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
   fullpath (path, fpath);
 
 
-  int uid = get_owner(fi->fh);
+  int uid = get_owner_fd(fi->fh);
 
   if(reserve_space(uid, size)){
-    int return_size = pwrite (fi->fh, buf, size, off);
+    int return_size = pwrite(fi->fh, buf, size, off);
     if(return_size < 0){
       return -errno;
     }
@@ -244,7 +279,7 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
   else {
     // User's disk quota has been reached
     log_data("QUOTA has been reached!\n");
-    return EDQUOT;
+    return -EDQUOT;
   }
 }
 
@@ -339,7 +374,7 @@ ntapfuse_readdir (const char *path, void *buf, fuse_fill_dir_t fill, off_t off,
       st.st_mode = de->d_type << 12;
 
       if (fill (buf, de->d_name, &st, 0))
-	break;
+      	break;
     }
 
   return 0;

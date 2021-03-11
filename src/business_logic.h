@@ -21,4 +21,20 @@ int reserve_space (uint64_t user_id, int reservation_size);
  */
 int update_reservation (uint64_t user_id, int reservation_size, int num_used);
 
+/*
+ * Changes the usage total for given user
+ * uint64_t user_id, the inter id representing the user
+ * int32_t total_change: total number of bytes to add to usage
+ * returns 1 if successful, 0 if unsuccessful
+ */
+int add_usage_record(uint64_t user_id, int64_t total_change);
+
+/*
+ * Initializes the global database, pointing to a file.
+ * const char *path: The file to create the database as. 
+ */
+int
+db_init(const char* path);
+
+
 #endif /*_BUSINESS_LOGIC_H_*/

@@ -22,7 +22,7 @@ int contains_user(uint64_t user_id);
  * int32_t total_change: total number of bytes to add to usage
  * returns 1 if successful, 0 if unsuccessful
  */
-int add_usage_record(uint64_t user_id, int32_t total_change);
+int add_usage_record(uint64_t user_id, int64_t total_change);
 
 /*
  * Changes the file total for given user
@@ -30,7 +30,7 @@ int add_usage_record(uint64_t user_id, int32_t total_change);
  * int32_t total_change: total number of files to add to the record
  * returns 1 if successful, 0 if unsuccessful
  */
-int add_file_record(uint64_t user_id, int32_t total_change);
+int add_file_record(uint64_t user_id, int64_t total_change);
 
 /*
  * Deletes all values from the database.
