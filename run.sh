@@ -2,5 +2,8 @@
 make
 sudo make install
 sudo umount mount
-ntapfuse mount base mount
+rm base/*
+rm mount/*
 rm log.txt
+ntapfuse mount base mount
+
