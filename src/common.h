@@ -4,6 +4,13 @@
 #include <stdint.h>
 #include <stdarg.h>
 
+typedef struct Record
+{
+	uid_t  user;
+	uint64_t total;
+	uint64_t quota;
+	uint32_t block;
+} Record;
 
 //// Default quota size is 1 MB
 // #define DEFAULT_USAGE_QUOTA 1048576
