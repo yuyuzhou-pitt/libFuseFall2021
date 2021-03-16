@@ -30,11 +30,14 @@
 #include <limits.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include <sys/xattr.h>
 #include <sys/types.h>
 
 #include <sys/stat.h>
+
+pthread_mutex_t lock;
 
 /**
  * Appends the path of the root filesystem to the given path, returning
@@ -137,7 +140,9 @@ ntapfuse_unlink (const char *path)
 
   if(unlink (fpath) == 0){
     log_data("unlink: \n\tPATH: %s\n\tOWNER: %zu\n\tSIZE: %zu\n", path, uid, fsize);
+    pthread_mutex_lock(&lock);
     add_usage_record(uid, -fsize);
+    pthread_mutex_unlock(&lock);
     return 0;
   }
   else {
@@ -205,6 +210,7 @@ ntapfuse_chown (const char *path, uid_t uid, gid_t gid)
 
   off_t size = get_filesize(fpath);
 
+  pthread_mutex_lock(&lock);
   if(reserve_space(uid, size)){
     int return_size = chown (fpath, uid, gid);
     if(return_size < 0){
@@ -213,9 +219,11 @@ ntapfuse_chown (const char *path, uid_t uid, gid_t gid)
 
     log_data("CHOWN: \n\tPATH: %s\n\tSIZE: %lu\n\tUID: %lu\n", path, return_size, uid);
     update_reservation(uid, size, return_size);
+    pthread_mutex_unlock(&lock);
     return return_size;
   }
   else {
+    pthread_mutex_unlock(&lock);
     // User's disk quota has been reached
     log_data("QUOTA has been reached!\n");
     return -EDQUOT;
@@ -232,7 +240,9 @@ ntapfuse_truncate (const char *path, off_t off)
   int fsize = get_filesize(fpath);
   if(truncate (fpath, off) == 0){
     log_data("truncate: \n\tPATH: %s\n\tSIZE: %d\n", path, off - fsize);
+    pthread_mutex_lock(&lock);
     add_usage_record(uid, off - fsize);
+    pthread_mutex_unlock(&lock);
     return 0;
   }
   else {
@@ -280,6 +290,7 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 
   int uid = get_owner_fd(fi->fh);
 
+  pthread_mutex_lock(&lock);
   if(reserve_space(uid, size)){
     int return_size = pwrite(fi->fh, buf, size, off);
     if(return_size < 0){
@@ -288,9 +299,11 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 
     log_data("write: \n\tPATH: %s\n\tSIZE: %lu\n\tOFFS: %lu\n", path, return_size, off);
     update_reservation(uid, size, return_size);
+    pthread_mutex_unlock(&lock);
     return return_size;
   }
   else {
+    pthread_mutex_unlock(&lock);
     // User's disk quota has been reached
     log_data("QUOTA has been reached!\n");
     return -EDQUOT;
@@ -413,6 +426,12 @@ void *
 ntapfuse_init (struct fuse_conn_info *conn)
 {
   db_init(":memory:");
+  pthread_mutex_init(&lock, NULL);
   return (fuse_get_context())->private_data;
 }
 
+void
+ntapfuse_destory (void *private_data)
+{
+    pthread_mutex_destroy(&lock);
+}

@@ -63,5 +63,8 @@ int ntapfuse_readdir (const char *path, void *buf,
 int ntapfuse_releasedir (const char *path, struct fuse_file_info *fi);
 int ntapfuse_access (const char *path, int mode);
 void *ntapfuse_init (struct fuse_conn_info *conn);
+void ntapfuse_destroy (void *private_data);
+
+
 
 #endif /* NTAPFUSE_H */

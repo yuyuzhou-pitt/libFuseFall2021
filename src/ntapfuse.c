@@ -61,6 +61,7 @@ struct fuse_operations ntapfuse_ops = {
   .releasedir = ntapfuse_releasedir,
   .access = ntapfuse_access,
   .init = ntapfuse_init,
+  .destroy = ntapfuse_destroy
 };
 
 void
