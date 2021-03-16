@@ -49,21 +49,21 @@ fullpath (const char *path, char *buf)
   strcat (buf, path);
 }
 
-uint64_t
+off_t
 get_filesize(const char *path){
   struct stat sb;
   int re = stat(path, &sb);
   return (re == -1)? -1 : sb.st_size;
 }
 
-uint64_t
+uid_t
 get_owner(const char *path){
   struct stat sb;
   int re = stat(path, &sb);
   return (re == -1)? -1 : sb.st_uid;
 }
 
-uint64_t
+uid_t
 get_owner_fd(int fd){
   struct stat sb;
   int re = fstat(fd, &sb);
@@ -133,10 +133,11 @@ ntapfuse_unlink (const char *path)
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
-  int uid = get_owner(path);
-  int fsize = get_filesize(path);
+  long uid = get_owner(fpath);
+  long fsize = get_filesize(fpath);
+
   if(unlink (fpath) == 0){
-    log_data("unlink: \n\tPATH: %s\n\tSIZE: %d\n", path, -fsize);
+    log_data("unlink: \n\tPATH: %s\n\tOWNER: %zu\n\tSIZE: %zu\n", path, uid, fsize);
     add_usage_record(uid, -fsize);
     return 0;
   }
@@ -213,8 +214,8 @@ ntapfuse_truncate (const char *path, off_t off)
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
-  int uid = get_owner(path);
-  int fsize = get_filesize(path);
+  int uid = get_owner(fpath);
+  int fsize = get_filesize(fpath);
   if(truncate (fpath, off) == 0){
     log_data("truncate: \n\tPATH: %s\n\tSIZE: %d\n", path, off - fsize);
     add_usage_record(uid, off - fsize);
@@ -262,7 +263,6 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 {
   char fpath[PATH_MAX];
   fullpath (path, fpath);
-
 
   int uid = get_owner_fd(fi->fh);
 
