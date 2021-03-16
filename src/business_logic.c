@@ -1,11 +1,11 @@
 #include "common.h"
 #include "business_logic.h"
-#include "database_interface.h"
+#include "database.h"
 
-int check_action (const char *user, int size_change){
+int check_action(uid_t user_id, int size_change){
 	Record *record;
 	
-	if (get_user_record(user, record) != 0)
+	if (get_user_record(user_id, record) != 0)
 		return 1;
 	
 	if ((record->total + size_change) <= record->quota)
@@ -14,6 +14,6 @@ int check_action (const char *user, int size_change){
 		return 0;
 }
 
-int update_user_total (const char *user, int total_change){
-	return change_user_record(user, total_change, 0);
+int update_user_total(uid_t user_id, int total_change){
+	return change_user_record(user_id, total_change, 0);
 }

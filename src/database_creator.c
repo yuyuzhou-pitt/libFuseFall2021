@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #include "common.h"
-#include "database_interface.h"
+#include "database.h"
 
 #define BLOCK_SIZE 63
 
@@ -14,24 +14,26 @@ int main(int argc, char **argv){
 	if (fp == NULL)
 		return 1;
 
-	fprintf(fp, "%-20.20s,%20.20i,%20.20i\n", "user1", 0, 100);
-	fprintf(fp, "%-20.20s,%20.20i,%20.20i\n", "user2", 50, 1000000);	
-	fprintf(fp, "%-20.20s,%20.20i,%20.20i\n", "user3", 0, 200);
+	fprintf(fp, "%20.20i,%20.20i,%20.20i\n", 123456789, 0, 100);
+	fprintf(fp, "%20.20i,%20.20i,%20.20i\n", 88888, 50, 1000000);	
+	fprintf(fp, "%20.20i,%20.20i,%20.20i\n", 2478952, 0, 200);
 
 	fclose(fp);	
 
 	Record record;
-	char   *user = "user2";
-	
+	uid_t user = 123456789;	
+
 	get_user_record(user, &record);
-	printf("\nuser:%s total:%lu quota:%lu\n\n", record.user, record.total, record.quota);	
+	printf("user:%i total:%lu quota:%lu\n\n", record.user_id, record.total, record.quota);	
 	
 	change_user_record(user, 50, 0);
 	get_user_record(user, &record);
-	printf("\nuser:%s total:%lu quota:%lu\n\n", record.user, record.total, record.quota);	
+	printf("user:%i total:%lu quota:%lu\n\n", record.user_id, record.total, record.quota);	
 	
-	user = "user4";
-	add_record(user, 2000, 100000);
+	user = 654123;
+	add_user_record(user, 2000, 100000);
 	get_user_record(user, &record);
-	printf("\nuser:%s total:%lu quota:%lu\n\n", record.user, record.total, record.quota);	
+	printf("user:%i total:%lu quota:%lu\n\n", record.user_id, record.total, record.quota);	
+
+	print_all_records();
 }
