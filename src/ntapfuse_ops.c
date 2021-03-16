@@ -21,6 +21,7 @@
 #define _XOPEN_SOURCE 500
 
 #include "ntapfuse_ops.h"
+#include "business_logic.h"
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -34,13 +35,14 @@
 #include <sys/xattr.h>
 #include <sys/types.h>
 
+#include <sys/stat.h>
+
+pthread_mutex_t lock;
+
 /**
  * Appends the path of the root filesystem to the given path, returning
  * the result in buf.
  */
-
-pthread_mutex_t lock;
-
 void
 fullpath (const char *path, char *buf)
 {
@@ -50,25 +52,41 @@ fullpath (const char *path, char *buf)
   strcat (buf, path);
 }
 
+off_t
+get_filesize(const char *path){
+  struct stat sb;
+  int re = stat(path, &sb);
+  return (re == -1)? -1 : sb.st_size;
+}
+
+uid_t
+get_owner(const char *path){
+  struct stat sb;
+  int re = stat(path, &sb);
+  return (re == -1)? -1 : sb.st_uid;
+}
+
+uid_t
+get_owner_fd(int fd){
+  struct stat sb;
+  int re = fstat(fd, &sb);
+  return (re == -1)? -1 : sb.st_uid;
+}
+
 void
 log_data(const char * format, ...){
     
   char fpath[PATH_MAX];
-  const char* path = "/../log.txt";
-  fullpath (path, fpath);
+  const char* lpath = "/../log.txt";
+  fullpath (lpath, fpath);
   FILE * fp = fopen(fpath, "a");    
 
   va_list args;
   va_start(args, format);
   vfprintf(fp, format, args);
   va_end(args);
-  fclose(fp);
-}
 
-void
-ntapfuse_destroy (void *private_data)
-{
-	pthread_mutex_destroy(&lock);
+  fclose(fp);
 }
 
 /* The following functions describe FUSE operations. Each operation appends
@@ -117,7 +135,20 @@ ntapfuse_unlink (const char *path)
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
-  return unlink (fpath) ? -errno : 0;
+  long uid = get_owner(fpath);
+  long fsize = get_filesize(fpath);
+
+  if(unlink (fpath) == 0){
+    log_data("unlink: \n\tPATH: %s\n\tOWNER: %zu\n\tSIZE: %zu\n", path, uid, fsize);
+    pthread_mutex_lock(&lock);
+    add_usage_record(uid, -fsize);
+    pthread_mutex_unlock(&lock);
+    return 0;
+  }
+  else {
+    return -errno;
+  }
+
 }
 
 int
@@ -177,7 +208,26 @@ ntapfuse_chown (const char *path, uid_t uid, gid_t gid)
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
-  return chown (fpath, uid, gid) ? -errno : 0;
+  off_t size = get_filesize(fpath);
+
+  pthread_mutex_lock(&lock);
+  if(reserve_space(uid, size)){
+    int return_size = chown (fpath, uid, gid);
+    if(return_size < 0){
+      return -errno;
+    }
+
+    log_data("CHOWN: \n\tPATH: %s\n\tSIZE: %lu\n\tUID: %lu\n", path, return_size, uid);
+    update_reservation(uid, size, return_size);
+    pthread_mutex_unlock(&lock);
+    return return_size;
+  }
+  else {
+    pthread_mutex_unlock(&lock);
+    // User's disk quota has been reached
+    log_data("QUOTA has been reached!\n");
+    return -EDQUOT;
+  }
 }
 
 int
@@ -186,7 +236,18 @@ ntapfuse_truncate (const char *path, off_t off)
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
-  return truncate (fpath, off) ? -errno : 0;
+  int uid = get_owner(fpath);
+  int fsize = get_filesize(fpath);
+  if(truncate (fpath, off) == 0){
+    log_data("truncate: \n\tPATH: %s\n\tSIZE: %d\n", path, off - fsize);
+    pthread_mutex_lock(&lock);
+    add_usage_record(uid, off - fsize);
+    pthread_mutex_unlock(&lock);
+    return 0;
+  }
+  else {
+    return -errno;
+  }
 }
 
 int
@@ -226,12 +287,27 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 {
   char fpath[PATH_MAX];
   fullpath (path, fpath);
-  
+
+  int uid = get_owner_fd(fi->fh);
+
   pthread_mutex_lock(&lock);
-	log_data("write: \n\tPATH: %s\n\tSIZE: %lu\n\tOFFS: %lu\n",path, size, off);
-  pthread_mutex_unlock(&lock);
-  
-  return pwrite (fi->fh, buf, size, off) < 0 ? -errno : size;
+  if(reserve_space(uid, size)){
+    int return_size = pwrite(fi->fh, buf, size, off);
+    if(return_size < 0){
+      return -errno;
+    }
+
+    log_data("write: \n\tPATH: %s\n\tSIZE: %lu\n\tOFFS: %lu\n", path, return_size, off);
+    update_reservation(uid, size, return_size);
+    pthread_mutex_unlock(&lock);
+    return return_size;
+  }
+  else {
+    pthread_mutex_unlock(&lock);
+    // User's disk quota has been reached
+    log_data("QUOTA has been reached!\n");
+    return -EDQUOT;
+  }
 }
 
 int
@@ -325,7 +401,7 @@ ntapfuse_readdir (const char *path, void *buf, fuse_fill_dir_t fill, off_t off,
       st.st_mode = de->d_type << 12;
 
       if (fill (buf, de->d_name, &st, 0))
-	break;
+      	break;
     }
 
   return 0;
@@ -349,7 +425,13 @@ ntapfuse_access (const char *path, int mode)
 void *
 ntapfuse_init (struct fuse_conn_info *conn)
 {
-  
+  db_init(":memory:");
   pthread_mutex_init(&lock, NULL);
   return (fuse_get_context())->private_data;
+}
+
+void
+ntapfuse_destory (void *private_data)
+{
+    pthread_mutex_destroy(&lock);
 }
