@@ -126,7 +126,6 @@ ntapfuse_mkdir (const char *path, mode_t mode)
   return mkdir (fpath, mode | S_IFDIR) ? -errno : 0;
 }
 
-// Not fully working yet
 int
 ntapfuse_unlink (const char *path)
 {
@@ -198,14 +197,29 @@ ntapfuse_chmod (const char *path, mode_t mode)
   return chmod (fpath, mode) ? -errno : 0;
 }
 
-// Need to change to affect the user_quota of the new owner
 int
 ntapfuse_chown (const char *path, uid_t uid, gid_t gid)
 {
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
-  return chown (fpath, uid, gid) ? -errno : 0;
+  off_t size = get_filesize(fpath);
+
+  if(reserve_space(uid, size)){
+    int return_size = chown (fpath, uid, gid);
+    if(return_size < 0){
+      return -errno;
+    }
+
+    log_data("CHOWN: \n\tPATH: %s\n\tSIZE: %lu\n\tUID: %lu\n", path, return_size, uid);
+    update_reservation(uid, size, return_size);
+    return return_size;
+  }
+  else {
+    // User's disk quota has been reached
+    log_data("QUOTA has been reached!\n");
+    return -EDQUOT;
+  }
 }
 
 int
