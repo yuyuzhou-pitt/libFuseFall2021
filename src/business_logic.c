@@ -5,7 +5,7 @@
 int check_action (const char *user, int size_change){
 	Record *record;
 	
-	if (get_user_record(user, &record) != 0)
+	if (get_user_record(user, record) != 0)
 		return 1;
 	
 	if ((record->total + size_change) <= record->quota)
