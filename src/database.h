@@ -2,6 +2,7 @@
 #define _DATABASE_H_
 
 #include <stdint.h>
+#include <sys/types.h>
 
 #include "common.h"
 
@@ -27,23 +28,27 @@
 int get_user_record(uid_t user_id, Record *record);
 
 /*
- * Changes the user total for given user
+ * Changes user totals and quotas
  * uid_t user_id: user id to change total of
- * int32_t total_change: change of total amount
- * int32_t quota_change: change of quota amount
+ * int32_t byte_total_change: change of byte total amount
+ * int32_t byte_quota_change: change of byte quota amount
+ * int32_t file_total_change: change of file total amount
+ * int32_t file_quota_change: change of quota total amount
  * returns standard return value
  */
-int change_user_record(uid_t user_id, int32_t total_change, int32_t quota_change);
+int change_user_record(uid_t user_id, int64_t byte_total_change, int64_t byte_quota_change, int64_t file_total_change, int64_t file_quota_change);
 
 /*
  * Adds a new user record to the database, will not add user record if record
  * alread exists for given user if
  * uid_t user_id: string name of user
- * int64_t total: total bytes used by user
- * int64_t quota: quota of user
+ * uint64_t byte total: total bytes used by user
+ * uint64_t byte quota: byte quota of user
+ * uint64_t file total: total files owned by user
+ * uint64_t file quota: file quota of user
  * returns standard return values
  */
-int add_user_record(uid_t user_id, int64_t total, int64_t quota);
+int add_user_record(uid_t user_id, uint64_t byte_total, uint64_t byte_quota, uint64_t file_total, uint64_t file_quota);
 
 /*
  * Prints all records in the database

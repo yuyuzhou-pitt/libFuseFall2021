@@ -1,23 +1,45 @@
 /* TODO
  * 1. Testing edge cases to make sure all strings are null-terminated
- * 2. Add some sort of concurrency protection. I(Greg) has some ideas tha may or may not work.
  * 3. Add caching
  * 4. Maybe binary search on file as a stretch goal
+ */
+
+/*
+ * Database design
+ * The database is a flat file stored on disk. In this instance it is a csv normally located in 
+ * 'database.csv'. Each record in the database is an exact byte length defined as BLOCK_SIZE with
+ * each record taking up one "block" in the database. If you know the block a record is located in
+ * you can fseek( block * BLOCK_SIZE ) and read in the desired data. The purpose of the standardized  * blocks is to enable updating records in place with needing to make new files every time.
  */
 
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/types.h>
 
 #include "common.h"
 #include "database.h"
 
-#define BLOCK_SIZE 63
+#define BLOCK_SIZE 105
 
 char databaseFile[MAX_DATABASE_FILE_NAME_SIZE] = "database.csv";
 
+/*
+ * Finds the block(line) of database file user record is in, can
+ * also be used as a user record existence check
+ * uid_t user_id: user_id of record to find
+ * FILE *fp: file pointer to already opened file
+ * returns number of block(0+) user record lives in, -1 if not found
+ */
 int find_block_of_user(uid_t user_id, FILE *fp);
+
+/*
+ * Fills in a record with information from database
+ * int32_t block: database block desired information lives in, should be zero or greater
+ * Record *record: pointer to Record struct that is filled with data
+ * returns standard return values
+ */
 int get_record_from_block(int32_t block, FILE *fp, Record *record);
 
 int get_user_record(uid_t user_id, Record *record)
@@ -40,7 +62,7 @@ int get_user_record(uid_t user_id, Record *record)
 	return 0;
 }
 
-int change_user_record(uid_t user_id, int32_t total_change, int32_t quota_change)
+int change_user_record(uid_t user_id, int64_t byte_total_change, int64_t byte_quota_change, int64_t file_total_change, int64_t file_quota_change)
 {
 	FILE 	*fp;
 	Record   record;
@@ -56,19 +78,21 @@ int change_user_record(uid_t user_id, int32_t total_change, int32_t quota_change
 
 	if (get_record_from_block(block, fp, &record) != 0)
 		return 1;
-	record.total += total_change;
-	record.quota += quota_change;
+	record.byte_total = ((record.byte_total + byte_total_change) < 0) ? 0 : (record.byte_total + byte_total_change);
+	record.byte_quota = ((record.byte_quota + byte_quota_change) < 0) ? 0 : (record.byte_quota + byte_quota_change);
+	record.file_total = ((record.file_total + file_total_change) < 0) ? 0 : (record.file_total + file_total_change);
+	record.file_quota = ((record.file_quota + file_quota_change) < 0) ? 0 : (record.file_quota + file_quota_change);
 
 	if (fseek(fp, record.block * BLOCK_SIZE, SEEK_SET) != 0)
 		return 1;
 	
-	if (fprintf(fp, "%20.20i,%20.20lu,%20.20lu\n", record.user_id, record.total, record.quota) != BLOCK_SIZE)
+	if (fprintf(fp, "%20.20i,%20.20lu,%20.20lu,%20.20lu,%20.20lu\n", record.user_id, record.byte_total, record.byte_quota, record.file_total, record.file_quota) != BLOCK_SIZE)
 		return 1;
 	fclose(fp);
 	return 0;
 }
 
-int add_user_record(uid_t user_id, int64_t total, int64_t quota)
+int add_user_record(uid_t user_id, uint64_t byte_total, uint64_t byte_quota, uint64_t file_total, uint64_t file_quota)
 {
 	FILE *fp;
 	
@@ -83,7 +107,7 @@ int add_user_record(uid_t user_id, int64_t total, int64_t quota)
 	if (fp == NULL)
 		return 2;
 	
-	if (fprintf(fp, "%20.20i,%20.20lu,%20.20lu\n", user_id, total, quota) != BLOCK_SIZE)
+	if (fprintf(fp, "%20.20i,%20.20lu,%20.20lu,%20.20lu,%20.20lu\n", user_id, byte_total, byte_quota, file_total, file_quota) != BLOCK_SIZE)
 		return 1;
 	
 	fclose(fp);
@@ -105,9 +129,11 @@ int print_all_records()
 	while (fgets(buffer, BLOCK_SIZE+1, fp) != NULL) {
 		temp = strtok_r(buffer, ",", &strtok_save_ptr);
 		record.user_id = (uid_t)atoi(temp);
-		record.total = (uint64_t)strtoul(strtok_r(NULL, ",", &strtok_save_ptr), NULL, 10);
-		record.quota = (uint64_t)strtoul(strtok_r(NULL, ",", &strtok_save_ptr), NULL, 10);
-		printf("User ID:%i Total:%lu Quota:%lu\n", record.user_id, record.total, record.quota);
+		record.byte_total = (uint64_t)strtoul(strtok_r(NULL, ",", &strtok_save_ptr), NULL, 10);
+		record.byte_quota = (uint64_t)strtoul(strtok_r(NULL, ",", &strtok_save_ptr), NULL, 10);
+		record.file_total = (uint64_t)strtoul(strtok_r(NULL, ",", &strtok_save_ptr), NULL, 10);
+		record.file_quota = (uint64_t)strtoul(strtok_r(NULL, ",", &strtok_save_ptr), NULL, 10);
+		printf("User_ID:%-20i Byte_total:%-20lu Byte_quota:%-20lu File_total:%-20lu File_quota:%-20lu\n", record.user_id, record.byte_total, record.byte_quota, record.file_total, record.file_quota);
 	}
 	return 0;
 }
@@ -131,6 +157,21 @@ int create_empty_database()
 
 	fclose(fp);
 	return 0	;
+}
+
+int database_init()
+{
+	FILE *fp;
+
+	fp = fopen(databaseFile, "r");
+	if (fp == NULL)
+		return create_empty_database();
+	return 0;	
+}
+
+int database_close()
+{
+	return 0;
 }
 
 int find_block_of_user(uid_t user_id, FILE *fp)
@@ -160,13 +201,13 @@ int get_record_from_block(int32_t block, FILE *fp, Record *record)
 	if (fread(buffer, 1, BLOCK_SIZE, fp) != BLOCK_SIZE)
 		return 1;
 	buffer[BLOCK_SIZE] = '\0';
-	//printf("line read:%s", buffer);
 	
 	temp = strtok_r(buffer, ",", &strtok_save_ptr);
 	record->user_id = (uid_t)atoi(temp);
-	//printf("user_idname copied\n");
-	record->total = (uint64_t)strtoul(strtok_r(NULL, ",", &strtok_save_ptr), NULL, 10);
-	record->quota = (uint64_t)strtoul(strtok_r(NULL, ",", &strtok_save_ptr), NULL, 10);
+	record->byte_total = (uint64_t)strtoul(strtok_r(NULL, ",", &strtok_save_ptr), NULL, 10);
+	record->byte_quota = (uint64_t)strtoul(strtok_r(NULL, ",", &strtok_save_ptr), NULL, 10);
+	record->file_total = (uint64_t)strtoul(strtok_r(NULL, ",", &strtok_save_ptr), NULL, 10);
+	record->file_quota = (uint64_t)strtoul(strtok_r(NULL, ",", &strtok_save_ptr), NULL, 10);
 	record->block = block;
 	return 0;
 }
