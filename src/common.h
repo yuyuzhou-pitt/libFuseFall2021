@@ -2,6 +2,7 @@
 #define _COMMON_H_
 
 #include <stdint.h>
+#include <stdarg.h>
 #include <sys/types.h>
 
 // Default byte quota size is 1 MB or 2^20 bytes
@@ -19,5 +20,12 @@ typedef struct Record
 	uint64_t file_quota;
 	uint32_t block;
 } Record;
+
+/*
+ * Prints formatted data to log file "log.txt"
+ * const char *format: format string
+ * ...: arguments to format string
+ */
+void log_data(const char *format, ...);
 
 #endif /*_COMMON_H_*/

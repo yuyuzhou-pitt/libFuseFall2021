@@ -22,7 +22,6 @@
 
 #include "ntapfuse_ops.h"
 #include <stdio.h>
-#include <stdarg.h>
 
 #include <errno.h>
 #include <dirent.h>
@@ -32,6 +31,8 @@
 
 #include <sys/xattr.h>
 #include <sys/types.h>
+
+#include "common.h"
 
 /**
  * Appends the path of the root filesystem to the given path, returning
@@ -44,21 +45,6 @@ fullpath (const char *path, char *buf)
 
   strcpy (buf, basedir);
   strcat (buf, path);
-}
-
-void
-log_data(const char * format, ...){
-    
-  char fpath[PATH_MAX];
-  const char* path = "/../log.txt";
-  fullpath (path, fpath);
-  FILE * fp = fopen(fpath, "a");    
-
-  va_list args;
-  va_start(args, format);
-  vfprintf(fp, format, args);
-  va_end(args);
-  fclose(fp);
 }
 
 /* The following functions describe FUSE operations. Each operation appends

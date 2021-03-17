@@ -47,7 +47,7 @@ int get_user_record(uid_t user_id, Record *record)
 	FILE 	*fp;
 	int32_t  block;
 	int	 return_value;
-	
+	log_data("haha get data\n");	
 	fp = fopen(databaseFile, "r");
 	if (fp == NULL)
 		return 2;
