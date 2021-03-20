@@ -1,65 +1,88 @@
 #ifndef _DATABASE_H_
 #define _DATABASE_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <sqlite3.h> 
-
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>                                                           
+#include <sys/types.h>
+
+#include "common.h"
 
 #define MAX_DATABASE_FILE_NAME_SIZE 20
 
 /*
+ * Default database filename is 'database.csv'
+ *
+ * Return values:
+ * 0: everything okay
+ * 1: error occurred
+ * 2: database does not exist
+ * 3: user does not exist in database
+ * 4: user already exists in database
+ */
+
+/*
  * Returns a user record
- * uint64_t user_id, the inter id representing the user
- * returns 1 if successful, 0 if unsuccessful 
+ * uid_t user_id: user id to retrieve record for
+ * record *record: return record pointer
+ * returns standard return value
  */
-int contains_user(uint64_t user_id);
+int get_user_record(uid_t user_id, Record *record);
 
 /*
- * Changes the usage total for given user
- * uint64_t user_id, the inter id representing the user
- * int32_t total_change: total number of bytes to add to usage
- * returns 1 if successful, 0 if unsuccessful
+ * Changes user totals and quotas
+ * uid_t user_id: user id to change total of
+ * int32_t byte_total_change: change of byte total amount
+ * int32_t byte_quota_change: change of byte quota amount
+ * int32_t file_total_change: change of file total amount
+ * int32_t file_quota_change: change of quota total amount
+ * returns standard return value
  */
-int add_usage_record(uint64_t user_id, int64_t total_change);
+int change_user_record(uid_t user_id, int64_t byte_total_change, int64_t byte_quota_change, int64_t file_total_change, int64_t file_quota_change);
 
 /*
- * Changes the file total for given user
- * uint64_t user_id, the inter id representing the user
- * int32_t total_change: total number of files to add to the record
- * returns 1 if successful, 0 if unsuccessful
+ * Adds a new user record to the database, will not add user record if record
+ * alread exists for given user if
+ * uid_t user_id: string name of user
+ * uint64_t byte total: total bytes used by user
+ * uint64_t byte quota: byte quota of user
+ * uint64_t file total: total files owned by user
+ * uint64_t file quota: file quota of user
+ * returns standard return values
  */
-int add_file_record(uint64_t user_id, int64_t total_change);
+int add_user_record(uid_t user_id, uint64_t byte_total, uint64_t byte_quota, uint64_t file_total, uint64_t file_quota);
 
 /*
- * Deletes all values from the database.
+ * Prints all records in the database
+ * returns standard return values
  */
-void clear_db();
+int print_all_records();
 
 /*
- * Prints every value in the database to console.
+ * Changes database target file
+ * const char *file_name: file name of new target file, must be less than
+ * MAX_DATABASE_FILE_NAME_SIZE
+ * returns standard return values
  */
-void print_all();
+int change_databaseFile(const char *file_name);
 
 /*
- * Adds a record to the database
- * uint64_t user_id, the inter id representing the user
- * returns 0 if successful, corresponsing SQLite error code if unsuccessful
+ * Creates an empty database from set database target file, will erase
+ * existing database with the same filename
+ * Returns standard return values
  */
-int add_user(uint64_t user_id);
+int create_empty_database();
 
 /*
- * Initializes the global database, pointing to a file.
- * const char *path: The file to create the database as. 
+ * Initializes database
+ * returns standard return values
  */
-int
-db_init(const char* path);
+int database_init();
 
 /*
- * Closes the global database.
+ * Closes database
+ * returns standard return values
  */
-int
-db_close();
+int database_close();
 
 #endif /* _DATABASE_H_*/

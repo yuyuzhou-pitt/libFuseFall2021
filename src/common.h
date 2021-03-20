@@ -3,22 +3,29 @@
 
 #include <stdint.h>
 #include <stdarg.h>
+#include <sys/types.h>
+
+// Default byte quota size is 1 MB or 2^20 bytes
+#define DEFAULT_BYTE_QUOTA 1<<20
+
+// Default file quota size is 100
+#define DEFAULT_FILE_QUOTA 100
 
 typedef struct Record
 {
-	uid_t  user;
-	uint64_t total;
-	uint64_t quota;
+	uid_t    user_id;
+	uint64_t byte_total;
+	uint64_t byte_quota;
+	uint64_t file_total;
+	uint64_t file_quota;
 	uint32_t block;
 } Record;
 
-//// Default quota size is 1 MB
-// #define DEFAULT_USAGE_QUOTA 1048576
-#define DEFAULT_USAGE_QUOTA 100
-// The default user can create 1000 files
-#define DEFAULT_FILE_QUOTA 1000
-
-// Printf to log file. Implemented in ntapfuse_ops.c
-void log_data(const char * format, ...);
+/*
+ * Prints formatted data to log file "log.txt"
+ * const char *format: format string
+ * ...: arguments to format string
+ */
+void log_data(const char *format, ...);
 
 #endif /*_COMMON_H_*/

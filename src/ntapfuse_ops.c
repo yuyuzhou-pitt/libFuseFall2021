@@ -23,7 +23,6 @@
 #include "ntapfuse_ops.h"
 #include "business_logic.h"
 #include <stdio.h>
-#include <stdarg.h>
 
 #include <errno.h>
 #include <dirent.h>
@@ -34,8 +33,9 @@
 
 #include <sys/xattr.h>
 #include <sys/types.h>
-
 #include <sys/stat.h>
+
+#include "common.h"
 
 pthread_mutex_t lock;
 
@@ -71,22 +71,6 @@ get_owner_fd(int fd){
   struct stat sb;
   int re = fstat(fd, &sb);
   return (re == -1)? -1 : sb.st_uid;
-}
-
-void
-log_data(const char * format, ...){
-    
-  char fpath[PATH_MAX];
-  const char* lpath = "/../log.txt";
-  fullpath (lpath, fpath);
-  FILE * fp = fopen(fpath, "a");    
-
-  va_list args;
-  va_start(args, format);
-  vfprintf(fp, format, args);
-  va_end(args);
-
-  fclose(fp);
 }
 
 /* The following functions describe FUSE operations. Each operation appends
