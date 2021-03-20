@@ -2,6 +2,8 @@
 #define _DATABASE_H_
 
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>                                                           
 #include <sys/types.h>
 
 #include "common.h"

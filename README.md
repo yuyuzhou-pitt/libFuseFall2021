@@ -9,16 +9,15 @@ The following packages need to be installed using
     $ sudo apt-get install <pkg-name>
 * fuse
 * libfuse-dev
+* sqlite3
+* libsqlite3-dev
 
 ## Building and Installing
 
-In order to build and install ntapfuse, run the following commands from the
+In order to build and install ntapfuse, run the following command from the
 src directory:
 
-    $ autoreconf --install
-    $ ./configure
-    $ make
-    $ sudo make install
+    $ ./run.sh
 
 ## Mounting the Filesystem
 
