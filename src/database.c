@@ -17,12 +17,14 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
+#include <limits.h>
+
 #include "common.h"
 #include "database.h"
 
 #define BLOCK_SIZE 105
 
-char databaseFile[MAX_DATABASE_FILE_NAME_SIZE] = "database.csv";
+char databaseFile[MAX_DATABASE_FILE_NAME_SIZE] = "/../database.csv";
 
 /*
  * Finds the block(line) of database file user record is in, can
@@ -44,9 +46,12 @@ int get_record_from_block(int32_t block, FILE *fp, Record *record);
 int get_user_record(uid_t user_id, Record *record)
 {
 	FILE 	*fp;
+	char     file_path[PATH_MAX];
 	int32_t  block;
 	int	 return_value;
-	fp = fopen(databaseFile, "r");
+	
+	fpath(databaseFile, file_path);
+	fp = fopen(file_path, "r");
 	if (fp == NULL)
 		return 2;
 	block = find_block_of_user(user_id, fp);
@@ -63,10 +68,12 @@ int get_user_record(uid_t user_id, Record *record)
 int change_user_record(uid_t user_id, int64_t byte_total_change, int64_t byte_quota_change, int64_t file_total_change, int64_t file_quota_change)
 {
 	FILE 	*fp;
+	char     file_path[PATH_MAX];
 	Record   record;
-	int32_t block;
+	int32_t  block;
 	
-	fp = fopen(databaseFile, "r+");
+	fpath(databaseFile, file_path);
+	fp = fopen(file_path, "r+");
 	if (fp == NULL)
 		return 2;
 
@@ -93,15 +100,17 @@ int change_user_record(uid_t user_id, int64_t byte_total_change, int64_t byte_qu
 int add_user_record(uid_t user_id, uint64_t byte_total, uint64_t byte_quota, uint64_t file_total, uint64_t file_quota)
 {
 	FILE *fp;
+	char  file_path[PATH_MAX];
 	
-	fp = fopen(databaseFile, "r");
+	fpath(databaseFile, file_path);
+	fp = fopen(file_path, "r");
 	if (fp == NULL)
 		return 2;
 	if (find_block_of_user(user_id, fp) >= 0)
 		return 4;
 	fclose(fp);
 
-	fp = fopen(databaseFile, "a+");
+	fp = fopen(file_path, "a+");
 	if (fp == NULL)
 		return 2;
 	
@@ -115,12 +124,14 @@ int add_user_record(uid_t user_id, uint64_t byte_total, uint64_t byte_quota, uin
 int print_all_records()
 {
 	FILE  *fp;
+	char   file_path[PATH_MAX];
 	char   buffer[BLOCK_SIZE+1];
 	char  *temp;
 	char  *strtok_save_ptr;	
 	Record record;
 
-	fp = fopen(databaseFile, "r");
+	fpath(databaseFile, file_path);
+	fp = fopen(file_path, "r");
 	if (fp == NULL)
 		return 2;	
 
@@ -148,22 +159,29 @@ int change_databaseFile(const char *file_name)
 int create_empty_database()
 {
 	FILE *fp;
+	char  file_path[PATH_MAX];
 
-	fp = fopen(databaseFile, "w");
+	log_data("Creating new database\n");
+	fpath(databaseFile, file_path);
+	fp = fopen(file_path, "w");
 	if (fp == NULL)
 		return 1;
 
 	fclose(fp);
-	return 0	;
+	return 0;
 }
 
 int database_init()
 {
 	FILE *fp;
+	char  file_path[PATH_MAX];
 
-	fp = fopen(databaseFile, "r");
+	fpath(databaseFile, file_path);
+	log_data("Searching for database file %s\n", file_path);
+	fp = fopen(file_path, "r");
 	if (fp == NULL)
 		return create_empty_database();
+	fclose(fp);
 	return 0;	
 }
 

@@ -125,7 +125,7 @@ ntapfuse_unlink (const char *path)
   if(unlink (fpath) == 0){
     log_data("unlink: \n\tPATH: %s\n\tOWNER: %zu\n\tSIZE: %zu\n", path, uid, fsize);
     pthread_mutex_lock(&lock);
-    add_usage_record(uid, -fsize);
+    update_user_total(uid, -fsize);
     pthread_mutex_unlock(&lock);
     return 0;
   }
@@ -202,7 +202,7 @@ ntapfuse_chown (const char *path, uid_t uid, gid_t gid)
     }
 
     log_data("CHOWN: \n\tPATH: %s\n\tSIZE: %lu\n\tUID: %lu\n", path, return_size, uid);
-    update_reservation(uid, size, return_size);
+    update_user_total(uid, return_size - size);
     pthread_mutex_unlock(&lock);
     return return_size;
   }
@@ -225,7 +225,7 @@ ntapfuse_truncate (const char *path, off_t off)
   if(truncate (fpath, off) == 0){
     log_data("truncate: \n\tPATH: %s\n\tSIZE: %d\n", path, off - fsize);
     pthread_mutex_lock(&lock);
-    add_usage_record(uid, off - fsize);
+    update_user_total(uid, off - fsize);
     pthread_mutex_unlock(&lock);
     return 0;
   }
@@ -275,6 +275,7 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
   int uid = get_owner_fd(fi->fh);
 
   pthread_mutex_lock(&lock);
+  log_data("In write on file:%s\n", fpath);
   if(reserve_space(uid, size)){
     int return_size = pwrite(fi->fh, buf, size, off);
     if(return_size < 0){
@@ -282,7 +283,7 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
     }
 
     log_data("write: \n\tPATH: %s\n\tSIZE: %lu\n\tOFFS: %lu\n", path, return_size, off);
-    update_reservation(uid, size, return_size);
+    update_user_total(uid, return_size - size);
     pthread_mutex_unlock(&lock);
     return return_size;
   }
@@ -409,13 +410,13 @@ ntapfuse_access (const char *path, int mode)
 void *
 ntapfuse_init (struct fuse_conn_info *conn)
 {
-  db_init(":memory:");
+  db_init();
   pthread_mutex_init(&lock, NULL);
   return (fuse_get_context())->private_data;
 }
 
 void
-ntapfuse_destory (void *private_data)
+ntapfuse_destroy (void *private_data)
 {
     pthread_mutex_destroy(&lock);
 }

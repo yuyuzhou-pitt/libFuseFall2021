@@ -8,7 +8,7 @@
 
 #include "common.h"
 
-#define MAX_DATABASE_FILE_NAME_SIZE 20
+#define MAX_DATABASE_FILE_NAME_SIZE 25
 
 /*
  * Default database filename is 'database.csv'

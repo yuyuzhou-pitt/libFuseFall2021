@@ -11,10 +11,10 @@
 
 int main(int argc, char **argv){
 
-	/*create_empty_database();
+	//create_empty_database();
 
 	FILE *fp;
-	fp = fopen("database.csv", "r+");
+	fp = fopen("database.csv", "w+");
 	if (fp == NULL)
 		return 1;
 
@@ -24,6 +24,7 @@ int main(int argc, char **argv){
 
 	fclose(fp);	
 
+	/*	
 	Record record;
 	uid_t user = 123456789;	
 
@@ -40,7 +41,7 @@ int main(int argc, char **argv){
 	printf("user:%i total:%lu quota:%lu\n\n", record.user_id, record.byte_total, record.byte_quota);	
 
 	print_all_records();
-	*/
+	
 	Record record;
 
 	database_init();
@@ -48,7 +49,8 @@ int main(int argc, char **argv){
 	reserve_space(123456789, 400);
 	get_user_record(123456789, &record);
 	printf("user:%i total:%lu quota:%lu\n\n", record.user_id, record.byte_total, record.byte_quota);	
-	update_reservation(123456789,200, 100);
+	update_user_total(123456789,200);
 	get_user_record(123456789, &record);
 	printf("user:%i total:%lu quota:%lu\n\n", record.user_id, record.byte_total, record.byte_quota);	
+	*/
 }

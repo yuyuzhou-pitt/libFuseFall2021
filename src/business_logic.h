@@ -13,27 +13,17 @@
 int reserve_space (uid_t user_id, uint64_t reservation_size);
 
 /*
- * Updates user total in database.
- * This shouls always be called after reserve_space()
+ * Updates user byte total in database.
  * 
  * uid_t user_id: id number of the user
- * uint64_t reservation_size: the number of bytes reserved
- * uint64_t num_used: the number of bytes actually written
+ * int64_t byte_total_changed: amount to change user byte total by
  * returns 0 if successful, 1 if not successful
  */
-int update_reservation (uid_t user_id, uint64_t reservation_size, uint64_t num_used);
-
-/*
- * Changes the usage total for given user
- * uid_t user_id, the inter id representing the user
- * int64_t total_change: number of bytes to change user bytes used by
- * returns 0 if successful, 1 if unsuccessful
- */
-int add_usage_record(uid_t user_id, int64_t total_change);
+int update_user_total (uid_t user_id, int64_t byte_total_changed);
 
 /*
  * Initializes the database
  */
-int db_int();
+int db_init();
 
 #endif /*_BUSINESS_LOGIC_H_*/

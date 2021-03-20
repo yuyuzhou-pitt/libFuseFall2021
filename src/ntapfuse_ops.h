@@ -18,8 +18,8 @@
  * You should have received a copy of the GNU General Public License
  * along with ntapfuse. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef NTAPFUSE_H
-#define NTAPFUSE_H
+#ifndef NTAPFUSE_OPS_H
+#define NTAPFUSE_OPS_H
 
 #define FUSE_USE_VERSION 26
 
@@ -27,6 +27,8 @@
 
 #include <fuse.h>
 #include <limits.h>
+
+void fullpath (const char *path, char *buf);
 
 int ntapfuse_getattr (const char *path, struct stat *buf);
 int ntapfuse_readlink (const char *path, char *target, size_t size);
@@ -67,4 +69,4 @@ void ntapfuse_destroy (void *private_data);
 
 
 
-#endif /* NTAPFUSE_H */
+#endif /* NTAPFUSE_OPS_H */

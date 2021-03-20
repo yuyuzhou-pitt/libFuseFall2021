@@ -22,6 +22,11 @@ typedef struct Record
 } Record;
 
 /*
+ * Gets fullpath of file from ntapfuse_ops.c
+ */
+void fpath(const char *path, char *buf);
+
+/*
  * Prints formatted data to log file "log.txt"
  * const char *format: format string
  * ...: arguments to format string
