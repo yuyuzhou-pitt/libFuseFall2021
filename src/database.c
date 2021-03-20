@@ -1,7 +1,6 @@
 /* TODO
- * 1. Testing edge cases to make sure all strings are null-terminated
- * 3. Add caching
- * 4. Maybe binary search on file as a stretch goal
+ * 1. Convert over to hash table
+ * 2. Add some sort of checking to make sure database is correct by scanning filesystem
  */
 
 /*
@@ -47,7 +46,6 @@ int get_user_record(uid_t user_id, Record *record)
 	FILE 	*fp;
 	int32_t  block;
 	int	 return_value;
-	log_data("haha get data\n");	
 	fp = fopen(databaseFile, "r");
 	if (fp == NULL)
 		return 2;
