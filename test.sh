@@ -1,43 +1,35 @@
 #!/bin/bash
 
+# debug...
+# set -x
 if [ $# -ne 2 ];then
     echo "Usage: $0 [base directory] [mount directory]";
     exit;
 fi
 
-printPass=false
-printDiff=false
+printPass=true
 
 base=$1
 mount=$2
 
 numPass=0
 numFail=0
+printf "Running tests...\n\n"
 for f in ./tests/*.sh; do
     cd $mount
-    output1=$(../$f)
-    code1=$?
-    cd ../$base
-    output2=$(../$f)
-    code2=$?
+    output=$(../$f)
+    errcode="${output##*$'\n'}" # match longest string from the beginning til \n
+    code=$?
     cd ..
 
-    #echo $output1
-    #echo $output2
-    #echo $code1
-    #echo $code2
-
-    if [ "$output1" = "$output2" ] && [ $code1 -eq $code2 ]; then
+    if [[ $errcode == 0 ]]; then
         if [ "$printPass" = true ]; then
-            echo PASSED: $f
+            echo "PASSED:" $f
         fi
         let "numPass+=1"
     else
-        echo FAILED: $f
-        if [ "$printDiff" = true ]; then
-            diff <(echo "$output1") <(echo "$output2")
-            echo ""
-        fi
+        echo -e "\e[1;31mFAILED (Error Code $errcode): $f\e[0m"
+
         let "numFail+=1"
     fi
 done
