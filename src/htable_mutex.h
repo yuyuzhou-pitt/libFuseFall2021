@@ -2,6 +2,7 @@
 #define _HTABLE_RECORD_CACHE_H_
 
 #include <stdbool.h>
+#include <pthread.h>
 
 struct htable_mutex;
 typedef struct htable_mutex htable_mutex;

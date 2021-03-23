@@ -1,6 +1,6 @@
 #include <stdlib.h>
-#include <string.h>
 #include <stdbool.h>
+#include <pthread.h>
 
 #include "htable.h"
 #include "htable_mutex.h"
