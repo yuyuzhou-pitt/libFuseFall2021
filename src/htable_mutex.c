@@ -1,14 +1,14 @@
 #include <stdlib.h>
 #include <stdbool.h>
+#include <pthread.h>
 
 #include "htable.h"
-#include "htable_record_cache.h"
-#include "common.h"
+#include "htable_mutex.h"
 
 static unsigned int fnv1a_hash_uid(const void *in, unsigned int seed);
 static int  htable_uid_eq(const void *a, const void *b);
 
-htable_record_cache *htable_record_cache_create()
+htable_mutex *htable_mutex_create()
 {
 	htable_hash hash = fnv1a_hash_uid;
 	htable_keq keq = htable_uid_eq;
@@ -19,45 +19,45 @@ htable_record_cache *htable_record_cache_create()
 		free
 	};
 	
-	return (htable_record_cache *)htable_create(hash, keq, &cbs);
+	return (htable_mutex *)htable_create(hash, keq, &cbs);
 }
 
-void htable_record_cache_destroy(htable_record_cache *ht)
+void htable_mutex_destroy(htable_mutex *ht)
 {
 	htable_destroy((htable *)ht);
 }
 
-void htable_record_cache_insert(htable_record_cache *ht, uid_t *key, Record *val)
+void htable_mutex_insert(htable_mutex *ht, uid_t *key, pthread_mutex_t *val)
 {
 	htable_insert((htable *)ht, (void *)key, (void *)val);
 }
 
-void htable_record_cache_remove(htable_record_cache *ht, uid_t *key)
+void htable_mutex_remove(htable_mutex *ht, uid_t *key)
 {
 	htable_remove((htable *)ht, (void *)key);
 }
 
-bool htable_record_cache_get(htable_record_cache *ht, uid_t *key, Record **val)
+bool htable_mutex_get(htable_mutex *ht, uid_t *key, pthread_mutex_t **val)
 {
 	return htable_get((htable *)ht, (void *)key, (void *)val);
 }
 
-void htable_record_cache_update(htable_record_cache *ht, uid_t *key, Record *val)
+void htable_mutex_update(htable_mutex *ht, uid_t *key, pthread_mutex_t *val)
 {
 	htable_update((htable *)ht, (void *)key, (void *)val);
 }
 
-htable_record_cache_enum *htable_record_cache_enum_create(htable_record_cache *ht)
+htable_mutex_enum *htable_mutex_enum_create(htable_mutex *ht)
 {
-	return (htable_record_cache_enum *)htable_enum_create((htable *)ht);
+	return (htable_mutex_enum *)htable_enum_create((htable *)ht);
 }
 
-bool htable_record_cache_enum_next(htable_record_cache_enum *he, uid_t **key, Record **val)
+bool htable_mutex_enum_next(htable_mutex_enum *he, uid_t **key, pthread_mutex_t **val)
 {
 	return htable_enum_next((htable_enum *)he, (void **)key, (void **)val);
 }
 
-void htable_record_cache_enum_destroy(htable_record_cache_enum *he)
+void htable_mutex_enum_destroy(htable_mutex_enum *he)
 {
 	htable_enum_destroy((htable_enum *)he);
 }
