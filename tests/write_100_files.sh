@@ -45,3 +45,5 @@ done
 
 # all tests passed!
 echo "0"
+takedown
+exit

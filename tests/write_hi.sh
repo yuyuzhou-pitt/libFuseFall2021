@@ -25,3 +25,5 @@ check_recent_write "1"
 
 # all tests passed!
 echo "0"
+takedown
+exit

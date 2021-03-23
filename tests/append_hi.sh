@@ -39,3 +39,5 @@ check_recent_write "3"
 
 # all tests passed!
 echo "0"
+takedown
+exit
