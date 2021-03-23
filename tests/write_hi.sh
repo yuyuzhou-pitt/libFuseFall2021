@@ -1,21 +1,27 @@
 #!/bin/bash
 
-# setup
-rm ../log.txt
+takedown() {
+    rm -rf hello.txt
+}
+
+check_recent_write() {
+    logtext=$(cat ../log.txt)
+    actual="write:${logtext##*$'write:'}"
+    
+    if [[ $actual != $expected ]]; then
+        echo $1
+        takedown
+        exit
+    fi
+}
 
 # test
 echo hello world > hello.txt
 expected="write: 
 	PATH: /hello.txt
 	SIZE: 12
-	OFFS: 0" # these linebreaks are important!
-actual=$(cat ../log.txt)
+	OFFS: 0"
+check_recent_write "1"
 
-if [[ $actual == $expected ]]; then
-    echo "0"
-else
-    echo "1"
-fi
-
-# takedown
-rm hello.txt
+# all tests passed!
+echo "0"
