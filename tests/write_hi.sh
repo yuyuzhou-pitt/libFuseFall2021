@@ -5,7 +5,7 @@ takedown() {
 }
 
 regex='(write: 
-	PATH: )(\/[a-zA-Z.]*)(
+	PATH: )(\/(.*))(
 	SIZE: )([0-9]+)(
 	OFFS: )([0-9]+)'
 
