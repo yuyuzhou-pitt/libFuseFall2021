@@ -10,7 +10,7 @@ int reserve_space (uid_t user_id, uint64_t reservation_size){
 	Record  record;
 	int	return_value;
 
-	log_data("Resrving %lu bytes for user %i\n", reservation_size, user_id);
+	log_data("Reserving %lu bytes for user %i\n", reservation_size, user_id);
 	return_value = get_user_record(user_id, &record);
 	log_data("Get user returned value %i\n", return_value);	
 	if (return_value == 3) {
