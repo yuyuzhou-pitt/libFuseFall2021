@@ -1,0 +1,43 @@
+CC ?= gcc
+BUILD_DIR = ./build
+SRC_DIR = ./src
+TEST_DIR = ./test
+TEST_CFLAGS ?= -DTEST -Wall
+CMOCK_DIR ?= /home/greg/Documents/1980/libFuseFall2021/CMock
+UNITY_DIR ?= /home/greg/Documents/1980/libFuseFall2021/CMock/vendor/unity
+TEST_BUILD_DIR ?= ${BUILD_DIR}/test
+TEST_MAKEFILE = ${TEST_BUILD_DIR}/MakefileTestSupport
+OBJ ?= ${BUILD_DIR}/obj
+OBJ_DIR = ${OBJ}
+
+./build/test/obj/unity.o: /home/greg/Documents/1980/libFuseFall2021/CMock/vendor/unity/src/unity.c
+	${CC} -o $@ -c $< -I /home/greg/Documents/1980/libFuseFall2021/CMock/vendor/unity/src
+
+./build/test/obj/cmock.o: /home/greg/Documents/1980/libFuseFall2021/CMock/src/cmock.c
+	${CC} -o $@ -c $< -I /home/greg/Documents/1980/libFuseFall2021/CMock/vendor/unity/src -I /home/greg/Documents/1980/libFuseFall2021/CMock/src
+
+./build/test/obj/htable.o: ./src/htable.c
+	${CC} -o $@ -c $< ${TEST_CFLAGS} -I ${SRC_DIR} ${INCLUDE_PATH}
+
+./build/test/runners/runner_test_htable.c: ./test/test_htable.c
+	@UNITY_DIR=${UNITY_DIR} ruby ${CMOCK_DIR}/scripts/create_runner.rb ./test/test_htable.c ./build/test/runners/runner_test_htable.c
+
+./build/test/obj/runner_test_htable.o: ./build/test/runners/runner_test_htable.c
+	${CC} -o $@ -c $< ${TEST_CFLAGS} -I ./src -I ./build/test/mocks -I /home/greg/Documents/1980/libFuseFall2021/CMock/vendor/unity/src -I /home/greg/Documents/1980/libFuseFall2021/CMock/src ${INCLUDE_PATH}
+
+./build/test/obj/test_htable.o: ./test/test_htable.c ./build/test/obj/htable.o 
+	${CC} -o $@ -c $< ${TEST_CFLAGS} -I ./src -I /home/greg/Documents/1980/libFuseFall2021/CMock/vendor/unity/src -I /home/greg/Documents/1980/libFuseFall2021/CMock/src -I ./build/test/mocks ${INCLUDE_PATH}
+
+./build/test/test_htable: ./build/test/obj/test_htable.o ./build/test/obj/runner_test_htable.o ./build/test/obj/htable.o   ./build/test/obj/unity.o ./build/test/obj/cmock.o
+	${CC} -o $@ ${LDFLAGS} ./build/test/obj/test_htable.o ./build/test/obj/runner_test_htable.o ./build/test/obj/htable.o   ./build/test/obj/unity.o ./build/test/obj/cmock.o
+
+./build/test/test_htable.testresult: ./build/test/test_htable
+	-./build/test/test_htable > ./build/test/test_htable.testresult 2>&1
+
+test_summary:
+	@UNITY_DIR=${UNITY_DIR} ruby ${CMOCK_DIR}/scripts/test_summary.rb 
+
+.PHONY: test_summary
+
+test: ./build/test/test_htable.testresult test_summary
+
