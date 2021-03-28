@@ -28,4 +28,10 @@ int update_user_total (uid_t user_id, int64_t byte_total_changed);
  */
 uid_t * db_init();
 
+/*
+ * Closes the database
+ * returns standard return values
+ */
+int db_close();
+
 #endif /*_BUSINESS_LOGIC_H_*/

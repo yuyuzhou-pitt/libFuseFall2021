@@ -288,7 +288,7 @@ bool htable_get(htable *ht, void *key, void **val)
 
 	cur = ht->buckets+idx;
 	while (cur != NULL) {
-		if (ht->keq(cur->key, key)){
+		if (ht->keq(key, cur->key)) {
 			if (val != NULL)
 				*val = cur->val;
 			return true;

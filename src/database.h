@@ -28,7 +28,7 @@
  * record *record: return record pointer
  * returns standard return value
  */
-int get_user_record(uid_t user_id, Record *record);
+int get_user_record(uid_t user_id, Record **record);
 
 /*
  * Changes user totals and quotas

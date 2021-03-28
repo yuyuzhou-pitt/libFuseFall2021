@@ -1,7 +1,7 @@
 #!/bin/bash
-make
 sudo make install
-sudo umount mount
+make clean
+fusermount -u mount
 rm base/*
 rm log.txt
 ntapfuse mount base mount

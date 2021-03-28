@@ -38,9 +38,9 @@ int write_database_to_file();
  */
 int check_need_to_write_to_file();
 
-int get_user_record(uid_t user_id, Record *record)
+int get_user_record(uid_t user_id, Record **record)
 {
-	if (htable_record_cache_get(ht, &user_id, &record))
+	if (htable_record_cache_get(ht, &user_id, record))
 		return 0;
 	return 3;
 }
@@ -50,15 +50,17 @@ int change_user_record(uid_t user_id, int64_t byte_total_change, int64_t byte_qu
 	if (check_need_to_write_to_file() != 0)
 		return 1;
 
+	Record *temp_record;
 	Record *record = (Record *)malloc(sizeof(Record));
 
-	if (!htable_record_cache_get(ht, &user_id, &record))
+	if (!htable_record_cache_get(ht, &user_id, &temp_record))
 		return 3;
 	
-	record->byte_total = ((record->byte_total + byte_total_change) < 0) ? 0 : (record->byte_total + byte_total_change);
-	record->byte_quota = ((record->byte_quota + byte_quota_change) < 0) ? 0 : (record->byte_quota + byte_quota_change);
-	record->file_total = ((record->file_total + file_total_change) < 0) ? 0 : (record->file_total + file_total_change);
-	record->file_quota = ((record->file_quota + file_quota_change) < 0) ? 0 : (record->file_quota + file_quota_change);
+	record->user_id = user_id;
+	record->byte_total = ((temp_record->byte_total + byte_total_change) < 0) ? 0 : (temp_record->byte_total + byte_total_change);
+	record->byte_quota = ((temp_record->byte_quota + byte_quota_change) < 0) ? 0 : (temp_record->byte_quota + byte_quota_change);
+	record->file_total = ((temp_record->file_total + file_total_change) < 0) ? 0 : (temp_record->file_total + file_total_change);
+	record->file_quota = ((temp_record->file_quota + file_quota_change) < 0) ? 0 : (temp_record->file_quota + file_quota_change);
 	
 	htable_record_cache_update(ht, &user_id, record);
 	state_operations_since_last_write++;
@@ -129,7 +131,7 @@ uid_t * database_init()
 	create_empty_database();
 	
 	fpath(databaseFile, file_path);
-	if (stat(file_path, &sb) != 0) {
+	if (stat(databaseFile, &sb) != 0) {
 		uid_t *users = (uid_t *)malloc(sizeof(uid_t));
 		*users = -1;
 		return users;
@@ -156,7 +158,6 @@ int create_database_from_file(uid_t *users)
 	FILE  *fp;
 	char   file_path[PATH_MAX];
 	char   buffer[BLOCK_SIZE+1];
-	char  *temp;
 	char  *strtok_save_ptr;	
 	int    i = 0;
 
@@ -166,21 +167,24 @@ int create_database_from_file(uid_t *users)
 		return 2;	
 
 	while (fgets(buffer, BLOCK_SIZE+1, fp) != NULL) {
+		i++;
 		Record *record = (Record *)malloc(sizeof(Record));
 		uid_t  *user_key = (uid_t *)malloc(sizeof(uid_t));	
-		i++;
-	
-		temp = strtok_r(buffer, ",", &strtok_save_ptr);
-		record->user_id = (uid_t)atoi(temp);
+
+		record->user_id = (uid_t)atoi(strtok_r(buffer, ",", &strtok_save_ptr));
 		record->byte_total = (uint64_t)strtoul(strtok_r(NULL, ",", &strtok_save_ptr), NULL, 10);
 		record->byte_quota = (uint64_t)strtoul(strtok_r(NULL, ",", &strtok_save_ptr), NULL, 10);
 		record->file_total = (uint64_t)strtoul(strtok_r(NULL, ",", &strtok_save_ptr), NULL, 10);
 		record->file_quota = (uint64_t)strtoul(strtok_r(NULL, ",", &strtok_save_ptr), NULL, 10);
+		*user_key = record->user_id;
+	
 		htable_record_cache_insert(ht, user_key, record);
 		users[i] = record->user_id;
 	}
 	users[0] = i;
 
+	fclose(fp);
+	
 	return 0;	
 }
 
@@ -212,7 +216,7 @@ int write_database_to_file()
 int check_need_to_write_to_file()
 {
 	if (state_operations_since_last_write >= WRITE_TO_FILE_THRESHOLD) {
-		state_operations_since_last_write == 0;
+		state_operations_since_last_write = 0;
 		return write_database_to_file();
 	}
 	return 0;
