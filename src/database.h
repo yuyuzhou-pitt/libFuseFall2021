@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>                                                           
 #include <sys/types.h>
+#include <sys/stat.h>
 
 #include "common.h"
 
@@ -67,20 +68,21 @@ int print_all_records();
 int change_databaseFile(const char *file_name);
 
 /*
- * Creates an empty database from set database target file, will erase
- * existing database with the same filename
+ * Creates an empty database. If a database already exists, will write
+ * it to file before deleting it and making a new one.
  * Returns standard return values
  */
 int create_empty_database();
 
 /*
  * Initializes database
- * returns standard return values
+ * returns a dynamically allocated uid_t array of all users in the database with the first element
+ * being the size of the array
  */
-int database_init();
+uid_t * database_init();
 
 /*
- * Closes database
+ * Writes current database to file then closes it.
  * returns standard return values
  */
 int database_close();

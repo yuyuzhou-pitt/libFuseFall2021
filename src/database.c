@@ -22,7 +22,7 @@ uint state_operations_since_last_write = 0;
  * uid_t *users: array to be filled with all users in the database, first element is size
  * returns standard return values
  */
-int create_database_from_file(uid *users);
+int create_database_from_file(uid_t *users);
 
 /*
  * Writes the current hashtable database out to databasefile
@@ -55,12 +55,12 @@ int change_user_record(uid_t user_id, int64_t byte_total_change, int64_t byte_qu
 	if (!htable_record_cache_get(ht, &user_id, &record))
 		return 3;
 	
-	record.byte_total = ((record.byte_total + byte_total_change) < 0) ? 0 : (record.byte_total + byte_total_change);
-	record.byte_quota = ((record.byte_quota + byte_quota_change) < 0) ? 0 : (record.byte_quota + byte_quota_change);
-	record.file_total = ((record.file_total + file_total_change) < 0) ? 0 : (record.file_total + file_total_change);
-	record.file_quota = ((record.file_quota + file_quota_change) < 0) ? 0 : (record.file_quota + file_quota_change);
+	record->byte_total = ((record->byte_total + byte_total_change) < 0) ? 0 : (record->byte_total + byte_total_change);
+	record->byte_quota = ((record->byte_quota + byte_quota_change) < 0) ? 0 : (record->byte_quota + byte_quota_change);
+	record->file_total = ((record->file_total + file_total_change) < 0) ? 0 : (record->file_total + file_total_change);
+	record->file_quota = ((record->file_quota + file_quota_change) < 0) ? 0 : (record->file_quota + file_quota_change);
 	
-	htable_record_cache_update(&user_id, record);
+	htable_record_cache_update(ht, &user_id, record);
 	state_operations_since_last_write++;
 	return 0;
 }
@@ -83,7 +83,7 @@ int add_user_record(uid_t user_id, uint64_t byte_total, uint64_t byte_quota, uin
 	record->file_quota = file_quota;
 	*user_key = user_id;
 
-	htable_insert(ht, user_key, record);
+	htable_record_cache_insert(ht, user_key, record);
 	state_operations_since_last_write++;
 	return 0;
 }
@@ -93,7 +93,7 @@ int print_all_records()
 	Record *record;
 	htable_record_cache_enum *he = htable_record_cache_enum_create(ht);
 
-	while (htable_enum_next(he, NULL, &record) {
+	while (htable_record_cache_enum_next(he, NULL, &record)) {
 		printf("User_ID:%-20i Byte_total:%-20lu Byte_quota:%-20lu File_total:%-20lu File_quota:%-20lu\n", record->user_id, record->byte_total, record->byte_quota, record->file_total, record->file_quota);
 	}
 	htable_record_cache_enum_destroy(he);
@@ -167,7 +167,7 @@ int create_database_from_file(uid_t *users)
 
 	while (fgets(buffer, BLOCK_SIZE+1, fp) != NULL) {
 		Record *record = (Record *)malloc(sizeof(Record));
-		uid_t  *user_key = (uid_t *)malloc(sizeof((uid_t));	
+		uid_t  *user_key = (uid_t *)malloc(sizeof(uid_t));	
 		i++;
 	
 		temp = strtok_r(buffer, ",", &strtok_save_ptr);
@@ -198,7 +198,7 @@ int write_database_to_file()
 
 	htable_record_cache_enum *he = htable_record_cache_enum_create(ht);
 
-	while (htable_enum_next(he, NULL, &record) {
+	while (htable_record_cache_enum_next(he, NULL, &record)) {
 		if (fprintf(fp, "%20.20i,%20.20lu,%20.20lu,%20.20lu,%20.20lu\n", record->user_id, record->byte_total, record->byte_quota, record->file_total, record->file_quota) != BLOCK_SIZE)
 			ret_val = 1;
 	}
@@ -210,6 +210,7 @@ int write_database_to_file()
 }
 
 int check_need_to_write_to_file()
+{
 	if (state_operations_since_last_write >= WRITE_TO_FILE_THRESHOLD) {
 		state_operations_since_last_write == 0;
 		return write_database_to_file();
