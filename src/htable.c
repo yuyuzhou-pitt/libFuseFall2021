@@ -296,7 +296,7 @@ bool htable_get(htable *ht, void *key, void **val)
 		cur = cur->next;
 	}
 
-	return 0;
+	return false;
 }
 
 void htable_update(htable *ht, void *key, void *val){
@@ -315,7 +315,7 @@ void htable_update(htable *ht, void *key, void *val){
 		if (ht->keq(cur->key, key)) {
 			if (cur->val != NULL)
 				ht->cbs.val_free(cur->val);
-			if ( val != NULL)
+			if (val != NULL)
 				val = ht->cbs.val_copy(val);
 			cur->val = val;
 			return;

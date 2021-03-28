@@ -23,7 +23,9 @@ int update_user_total (uid_t user_id, int64_t byte_total_changed);
 
 /*
  * Initializes the database
+ * returns a uid_t array of users in database with the first element
+ * being the number of users
  */
-int db_init();
+uid_t * db_init();
 
 #endif /*_BUSINESS_LOGIC_H_*/

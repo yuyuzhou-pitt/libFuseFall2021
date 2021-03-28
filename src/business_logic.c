@@ -48,9 +48,7 @@ int update_user_total(uid_t user_id, int64_t byte_total_changed){
 	return 0;
 }
 
-int db_init()
+uid_t * db_init()
 {
-	log_data("Initializing database\n");
 	return database_init();
-	log_data("Finished initializing database\n");
 }
