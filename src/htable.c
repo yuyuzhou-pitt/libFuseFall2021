@@ -313,6 +313,8 @@ void htable_update(htable *ht, void *key, void *val){
 	cur = ht->buckets+idx;
 	while (cur != NULL) {
 		if (ht->keq(cur->key, key)) {
+			if (cur->val == val)
+				return;
 			if (cur->val != NULL)
 				ht->cbs.val_free(cur->val);
 			if (val != NULL)
