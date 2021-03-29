@@ -1,0 +1,14 @@
+./test/test_htable.c:56:test_single_insert:PASS
+./test/test_htable.c:69:test_double_insert:PASS
+./test/test_htable.c:89:test_insert_update_existing_key:PASS
+./test/test_htable.c:103:test_null_insert:PASS
+./test/test_htable.c:112:test_single_remove:PASS
+./test/test_htable.c:120:test_removes_only_specified_key_and_val:PASS
+./test/test_htable.c:135:test_null_remove:PASS
+./test/test_htable.c:146:test_get_value:PASS
+./test/test_htable.c:156:test_get_false_on_nonexistent_key:PASS
+./test/test_htable.c:167:test_null_get:PASS
+
+-----------------------
+10 Tests 0 Failures 0 Ignored 
+OK

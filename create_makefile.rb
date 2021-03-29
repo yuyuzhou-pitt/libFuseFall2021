@@ -2,7 +2,7 @@ require 'fileutils'
 ABS_ROOT = FileUtils.pwd
 CMOCK_DIR = File.expand_path(ENV.fetch('CMOCK_DIR', File.join(ABS_ROOT, './CMock')))
 require "#{CMOCK_DIR}/lib/cmock"
-UNITY_DIR = File.join(CMOCK_DIR, 'vendor', 'unity')
+UNITY_DIR = File.join(CMOCK_DIR, 'vendor', 'Unity')
 require "#{UNITY_DIR}/auto/generate_test_runner"
 
 SRC_DIR =  ENV.fetch('SRC_DIR',  './src')

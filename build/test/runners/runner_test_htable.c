@@ -11,7 +11,16 @@
 /*=======External Functions This Runner Calls=====*/
 extern void setUp(void);
 extern void tearDown(void);
-extern void test_insert(void);
+extern void test_single_insert(void);
+extern void test_double_insert(void);
+extern void test_insert_update_existing_key(void);
+extern void test_null_insert(void);
+extern void test_single_remove();
+extern void test_removes_only_specified_key_and_val();
+extern void test_null_remove();
+extern void test_get_value(void);
+extern void test_get_false_on_nonexistent_key(void);
+extern void test_null_get(void);
 
 
 /*=======Mock Management=====*/
@@ -73,7 +82,16 @@ static void run_test(UnityTestFunction func, const char* name, UNITY_LINE_TYPE l
 int main(void)
 {
   UnityBegin("./test/test_htable.c");
-  run_test(test_insert, "test_insert", 46);
+  run_test(test_single_insert, "test_single_insert", 56);
+  run_test(test_double_insert, "test_double_insert", 69);
+  run_test(test_insert_update_existing_key, "test_insert_update_existing_key", 89);
+  run_test(test_null_insert, "test_null_insert", 103);
+  run_test(test_single_remove, "test_single_remove", 112);
+  run_test(test_removes_only_specified_key_and_val, "test_removes_only_specified_key_and_val", 120);
+  run_test(test_null_remove, "test_null_remove", 135);
+  run_test(test_get_value, "test_get_value", 146);
+  run_test(test_get_false_on_nonexistent_key, "test_get_false_on_nonexistent_key", 156);
+  run_test(test_null_get, "test_null_get", 167);
 
   return UnityEnd();
 }
