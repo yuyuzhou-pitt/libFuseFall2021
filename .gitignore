@@ -70,3 +70,5 @@ src/Makefile
 src/ntapfuse
 src/.*
 
+# Test related files
+build/*.testresult
