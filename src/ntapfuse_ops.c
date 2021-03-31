@@ -418,5 +418,6 @@ ntapfuse_init (struct fuse_conn_info *conn)
 void
 ntapfuse_destroy (void *private_data)
 {
-    pthread_mutex_destroy(&lock);
+	db_close();
+	pthread_mutex_destroy(&lock);
 }

@@ -288,7 +288,7 @@ bool htable_get(htable *ht, void *key, void **val)
 
 	cur = ht->buckets+idx;
 	while (cur != NULL) {
-		if (ht->keq(cur->key, key)){
+		if (ht->keq(key, cur->key)) {
 			if (val != NULL)
 				*val = cur->val;
 			return true;
@@ -296,7 +296,7 @@ bool htable_get(htable *ht, void *key, void **val)
 		cur = cur->next;
 	}
 
-	return 0;
+	return false;
 }
 
 void htable_update(htable *ht, void *key, void *val){
@@ -313,9 +313,11 @@ void htable_update(htable *ht, void *key, void *val){
 	cur = ht->buckets+idx;
 	while (cur != NULL) {
 		if (ht->keq(cur->key, key)) {
+			if (cur->val == val)
+				return;
 			if (cur->val != NULL)
 				ht->cbs.val_free(cur->val);
-			if ( val != NULL)
+			if (val != NULL)
 				val = ht->cbs.val_copy(val);
 			cur->val = val;
 			return;

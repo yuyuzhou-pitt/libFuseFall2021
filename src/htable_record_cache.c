@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <string.h>
 #include <stdbool.h>
 
 #include "htable.h"
@@ -40,7 +39,7 @@ void htable_record_cache_remove(htable_record_cache *ht, uid_t *key)
 
 bool htable_record_cache_get(htable_record_cache *ht, uid_t *key, Record **val)
 {
-	return htable_get((htable *)ht, (void *)key, (void *)val);
+	return htable_get((htable *)ht, (void *)key, (void **)val);
 }
 
 void htable_record_cache_update(htable_record_cache *ht, uid_t *key, Record *val)
@@ -63,19 +62,24 @@ void htable_record_cache_enum_destroy(htable_record_cache_enum *he)
 	htable_enum_destroy((htable_enum *)he);
 }
 
-static unsigned int fnv1a_hash_uid(const void *in, unsigned int seed)
+static unsigned int fnv1a_hash_uid_int(const void *in, int len, unsigned int seed)
 {
 	unsigned int h = seed;
 	unsigned int c;
 	size_t	     i;
 
-	for (i=0; i < sizeof(in); i++) {
+	for (i=0; i < len; i++) {
 		c = ((unsigned char *)in)[i];
 		h ^= c;
 		h *= 16777619;
 	}
 
 	return h;
+}
+
+static unsigned int fnv1a_hash_uid(const void *in, unsigned int seed)
+{
+	return fnv1a_hash_uid_int(in, sizeof(*(uid_t *)in), seed);
 }
 
 static int htable_uid_eq(const void *a, const void *b){
