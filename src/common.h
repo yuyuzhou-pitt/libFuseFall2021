@@ -6,10 +6,10 @@
 #include <sys/types.h>
 
 // Default byte quota size is 1 MB or 2^20 bytes
-#define DEFAULT_BYTE_QUOTA 1<<20
+#define DEFAULT_BYTE_QUOTA 100
 
 // Default file quota size is 100
-#define DEFAULT_FILE_QUOTA 100
+#define DEFAULT_FILE_QUOTA 3
 
 typedef struct Record
 {
