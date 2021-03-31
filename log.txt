@@ -1,1 +1,26 @@
 Initializing database
+In write on file:/home/netapp/Desktop/FUSE-BRICK/base/a
+Reserving 6 bytes for user 1000
+write: 
+	PATH: /a
+	SIZE: 6
+	OFFS: 0
+In write on file:/home/netapp/Desktop/FUSE-BRICK/base/b
+Reserving 6 bytes for user 1000
+write: 
+	PATH: /b
+	SIZE: 6
+	OFFS: 0
+In write on file:/home/netapp/Desktop/FUSE-BRICK/base/c
+Reserving 6 bytes for user 1000
+write: 
+	PATH: /c
+	SIZE: 6
+	OFFS: 0
+In write on file:/home/netapp/Desktop/FUSE-BRICK/base/d
+Reserving 6 bytes for user 1000
+write: 
+	PATH: /d
+	SIZE: 6
+	OFFS: 0
+Closing database
