@@ -10,6 +10,7 @@ int reserve_space (uid_t user_id, uint64_t reservation_size){
 	Record  *record;
 	int	return_value;
 
+	log_data("Reserving %lu bytes for user %i\n", reservation_size, user_id);
 	return_value = get_user_record(user_id, &record);
 	if (return_value == 3) {
 		if (add_user_record(user_id, 0, DEFAULT_BYTE_QUOTA, 0, DEFAULT_FILE_QUOTA) != 0)
