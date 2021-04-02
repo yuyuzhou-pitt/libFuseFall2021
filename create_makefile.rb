@@ -2,7 +2,7 @@ require 'fileutils'
 ABS_ROOT = FileUtils.pwd
 CMOCK_DIR = File.expand_path(ENV.fetch('CMOCK_DIR', File.join(ABS_ROOT, './CMock')))
 require "#{CMOCK_DIR}/lib/cmock"
-UNITY_DIR = File.join(CMOCK_DIR, 'vendor', 'Unity')
+UNITY_DIR = File.join(CMOCK_DIR, 'vendor', 'unity')
 require "#{UNITY_DIR}/auto/generate_test_runner"
 
 SRC_DIR =  ENV.fetch('SRC_DIR',  './src')
@@ -200,4 +200,8 @@ File.open(TEST_MAKEFILE, 'w') do |mkfile|
   # Create target to run all tests
   mkfile.puts "test: #{test_targets.map { |t| t + '.testresult' }.join(' ')} test_summary"
   mkfile.puts ''
+
+  # Create clean task
+  mkfile.puts 'clean:'
+  mkfile.puts "\tfind ${TEST_BUILD_DIR} -maxdepth 1 -type f -delete" 
 end
