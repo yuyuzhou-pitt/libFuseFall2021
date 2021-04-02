@@ -2,10 +2,11 @@
 sudo make install
 make clean
 fusermount -u mount
-rm base/*
-rmdir base/*
-rm mount/*
-rmdir mount/*
+
+rm -r base/*
+rm -r mount/*
 rm log.txt
+rm database.csv
+
 ntapfuse mount base mount
 

@@ -15,12 +15,12 @@
  * Default database filename is 'database.csv'
  *
  * Return values:
- * 0: everything okay
- * 1: error occurred
- * 2: database does not exist
- * 3: user does not exist in database
- * 4: user already exists in database
  */
+ #define DB_SUCCESS             0    /* everything okay                  */
+ #define DB_ERROR               1    /* error occurred                   */
+ #define DB_NOT_INIT            2    /* database does not exist          */
+ #define DB_USER_NOT_EXIST      3    /* user does not exist in database  */
+ #define DB_USER_ALREADY_EXIST  4    /* user already exists in database  */
 
 /*
  * Returns a user record

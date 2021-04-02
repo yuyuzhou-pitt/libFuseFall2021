@@ -48,13 +48,19 @@ int get_user_record(uid_t user_id, Record **record)
 int change_user_record(uid_t user_id, int64_t byte_total_change, int64_t byte_quota_change, int64_t file_total_change, int64_t file_quota_change)
 {
 	if (check_need_to_write_to_file() != 0)
-		return 1;
+		return DB_ERROR;
 
 	Record *record;
 
-	if (!htable_record_cache_get(ht, &user_id, &record))
-		return 3;
+	if (!htable_record_cache_get(ht, &user_id, &record)){
+		return DB_USER_NOT_EXIST;
+	}
 	
+	if((record->byte_total + byte_total_change) > record->byte_quota 
+		|| (record->file_total + file_total_change) > record->file_quota){
+		return DB_ERROR;
+	}
+
 	record->user_id = user_id;
 	record->byte_total = ((record->byte_total + byte_total_change) < 0) ? 0 : (record->byte_total + byte_total_change);
 	record->byte_quota = ((record->byte_quota + byte_quota_change) < 0) ? 0 : (record->byte_quota + byte_quota_change);

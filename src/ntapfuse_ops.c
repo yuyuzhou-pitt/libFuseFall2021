@@ -22,6 +22,7 @@
 
 #include "ntapfuse_ops.h"
 #include "business_logic.h"
+#include "common.h"
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -61,9 +62,7 @@ get_owner(const char *path){
   struct stat sb;
   int re = stat(path, &sb);
   if(re != -1){
-    if(ensure_user_exists(sb.st_uid) == 0){
-      return sb.st_uid;
-    }
+    return sb.st_uid;
   }
 
   return -1;
@@ -74,28 +73,10 @@ get_owner_fd(int fd){
   struct stat sb;
   int re = fstat(fd, &sb);
   if(re != -1){
-    if(ensure_user_exists(sb.st_uid) == 0){
-      return sb.st_uid;
-    }
+    return sb.st_uid;
   }
 
   return -1;
-}
-
-void
-log_data(const char * format, ...){
-    
-  char fpath[PATH_MAX];
-  const char* lpath = "/../log.txt";
-  fullpath (lpath, fpath);
-  FILE * fp = fopen(fpath, "a");    
-
-  va_list args;
-  va_start(args, format);
-  vfprintf(fp, format, args);
-  va_end(args);
-
-  fclose(fp);
 }
 
 /* The following functions describe FUSE operations. Each operation appends
@@ -495,7 +476,11 @@ ntapfuse_access (const char *path, int mode)
 void *
 ntapfuse_init (struct fuse_conn_info *conn)
 {
-  db_init(":memory:");
+  db_init();
   return (fuse_get_context())->private_data;
 }
 
+void
+ntapfuse_destroy (void *private_data){
+	db_close();
+}

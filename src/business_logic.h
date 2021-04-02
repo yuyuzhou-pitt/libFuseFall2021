@@ -2,14 +2,6 @@
 #define _BUSINESS_LOGIC_H_
 
 /*
- * Checks whether the user exists in the database.
- * If they do not exist, add the user to the database.
- * 
- * returns 0 if successful, non-zero if error
- */
-int ensure_user_exists(uid_t user_id);
-
-/*
  * Changes the usage total for given user
  * uint64_t user_id, the inter id representing the user
  * int32_t total_change: total number of bytes to add to usage
