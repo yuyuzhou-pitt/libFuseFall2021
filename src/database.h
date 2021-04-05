@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>                                                           
 #include <sys/types.h>
+#include <sys/stat.h>
 
 #include "common.h"
 
@@ -14,12 +15,12 @@
  * Default database filename is 'database.csv'
  *
  * Return values:
- * 0: everything okay
- * 1: error occurred
- * 2: database does not exist
- * 3: user does not exist in database
- * 4: user already exists in database
  */
+ #define DB_SUCCESS             0    /* everything okay                  */
+ #define DB_ERROR               1    /* error occurred                   */
+ #define DB_NOT_INIT            2    /* database does not exist          */
+ #define DB_USER_NOT_EXIST      3    /* user does not exist in database  */
+ #define DB_USER_ALREADY_EXIST  4    /* user already exists in database  */
 
 /*
  * Returns a user record
@@ -27,7 +28,7 @@
  * record *record: return record pointer
  * returns standard return value
  */
-int get_user_record(uid_t user_id, Record *record);
+int get_user_record(uid_t user_id, Record **record);
 
 /*
  * Changes user totals and quotas
@@ -67,20 +68,21 @@ int print_all_records();
 int change_databaseFile(const char *file_name);
 
 /*
- * Creates an empty database from set database target file, will erase
- * existing database with the same filename
+ * Creates an empty database. If a database already exists, will write
+ * it to file before deleting it and making a new one.
  * Returns standard return values
  */
 int create_empty_database();
 
 /*
  * Initializes database
- * returns standard return values
+ * returns a dynamically allocated uid_t array of all users in the database with the first element
+ * being the size of the array
  */
-int database_init();
+uid_t * database_init();
 
 /*
- * Closes database
+ * Writes current database to file then closes it.
  * returns standard return values
  */
 int database_close();

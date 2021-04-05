@@ -22,22 +22,20 @@
 
 #include "ntapfuse_ops.h"
 #include "business_logic.h"
+#include "common.h"
 #include <stdio.h>
+#include <stdarg.h>
 
 #include <errno.h>
 #include <dirent.h>
 #include <limits.h>
 #include <string.h>
 #include <unistd.h>
-#include <pthread.h>
 
 #include <sys/xattr.h>
 #include <sys/types.h>
+
 #include <sys/stat.h>
-
-#include "common.h"
-
-pthread_mutex_t lock;
 
 /**
  * Appends the path of the root filesystem to the given path, returning
@@ -63,14 +61,22 @@ uid_t
 get_owner(const char *path){
   struct stat sb;
   int re = stat(path, &sb);
-  return (re == -1)? -1 : sb.st_uid;
+  if(re != -1){
+    return sb.st_uid;
+  }
+
+  return -1;
 }
 
 uid_t
 get_owner_fd(int fd){
   struct stat sb;
   int re = fstat(fd, &sb);
-  return (re == -1)? -1 : sb.st_uid;
+  if(re != -1){
+    return sb.st_uid;
+  }
+
+  return -1;
 }
 
 /* The following functions describe FUSE operations. Each operation appends
@@ -95,13 +101,33 @@ ntapfuse_readlink (const char *path, char *target, size_t size)
   return readlink (fpath, target, size) < 0 ? -errno : 0;
 }
 
+
 int
 ntapfuse_mknod (const char *path, mode_t mode, dev_t dev)
 {
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
-  return mknod (fpath, mode, dev) ? -errno : 0;
+  // Need to create file to get the uid later.
+  // I don't like this.
+  int re = mknod (fpath, mode, dev);
+  if(re){
+    log_data("mknod: err %d\n", re);
+    return -errno;
+  }
+
+  long uid = get_owner(fpath);
+  if(update_file_record(uid, 1)){
+    log_data("mknod: \n\tPATH: %s \t %s\n\tOWNER: %zu\n", path, fpath, uid);
+    print_all();
+    return 0;
+  }
+  else{
+    // User's inode quota has been reached
+    log_data("INODE QUOTA has been reached!\n");
+    unlink(fpath);
+    return -EDQUOT;
+  }
 }
 
 int
@@ -110,7 +136,26 @@ ntapfuse_mkdir (const char *path, mode_t mode)
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
-  return mkdir (fpath, mode | S_IFDIR) ? -errno : 0;
+  // Need to create file to get the uid later.
+  // I don't like this.
+  int re = mkdir(fpath, mode | S_IFDIR);
+  if(re){
+    log_data("mknod: err %d\n", re);
+    return -errno;
+  }
+
+  long uid = get_owner(fpath);
+  if(update_file_record(uid, 1)){
+    log_data("mkdir: \n\tPATH: %s\n\tOWNER: %zu\n", path, uid);
+    print_all();
+    return 0;
+  }
+  else{
+    // User's inode quota has been reached
+    log_data("INODE QUOTA has been reached!\n");
+    rmdir(fpath);
+    return -EDQUOT;
+  }
 }
 
 int
@@ -123,16 +168,15 @@ ntapfuse_unlink (const char *path)
   long fsize = get_filesize(fpath);
 
   if(unlink (fpath) == 0){
+    update_file_record(uid, -1);
+    update_usage_record(uid, -fsize);
     log_data("unlink: \n\tPATH: %s\n\tOWNER: %zu\n\tSIZE: %zu\n", path, uid, fsize);
-    pthread_mutex_lock(&lock);
-    update_user_total(uid, -fsize);
-    pthread_mutex_unlock(&lock);
+    print_all();
     return 0;
   }
   else {
     return -errno;
   }
-
 }
 
 int
@@ -141,16 +185,41 @@ ntapfuse_rmdir (const char *path)
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
-  return rmdir (fpath) ? -errno : 0;
+  int uid = get_owner(fpath);
+  if(rmdir(fpath) == 0){
+    update_file_record(uid, -1);
+    log_data("rmdir: \n\tPATH: %s\n\tOWNER: %zu\n", path, uid);
+    print_all();
+    return 0;
+  }
+  else {
+    return -errno;
+  }
 }
 
+//Currently wrong
 int
 ntapfuse_symlink (const char *path, const char *link)
 {
   char flink[PATH_MAX];
   fullpath (link, flink);
 
-  return symlink (path, flink) ? -errno : 0;
+  long uid = get_owner(flink);
+  if(update_file_record(uid, 1)){
+    log_data("symlink: \n\tPATH: %s\n\tOWNER: %zu\n", path, uid);
+    print_all();
+    int re = symlink (path, flink) ? -errno : 0;
+    if(re){
+      update_file_record(uid, -1);
+      return -errno;
+    }    
+    return 0;
+  }
+  else{
+    // User's inode quota has been reached
+    log_data("INODE QUOTA has been reached!\n");
+    return -EDQUOT;
+  }
 }
 
 int
@@ -165,6 +234,7 @@ ntapfuse_rename (const char *src, const char *dst)
   return rename (fsrc, fdst) ? -errno : 0;
 }
 
+// Should we track this? I don't know...
 int
 ntapfuse_link (const char *src, const char *dst)
 {
@@ -186,6 +256,7 @@ ntapfuse_chmod (const char *path, mode_t mode)
   return chmod (fpath, mode) ? -errno : 0;
 }
 
+// NOT FULLY IMPLEMENTED OR TESTED
 int
 ntapfuse_chown (const char *path, uid_t uid, gid_t gid)
 {
@@ -194,20 +265,18 @@ ntapfuse_chown (const char *path, uid_t uid, gid_t gid)
 
   off_t size = get_filesize(fpath);
 
-  pthread_mutex_lock(&lock);
-  if(reserve_space(uid, size)){
-    int return_size = chown (fpath, uid, gid);
-    if(return_size < 0){
+  if(update_usage_record(uid, size)){
+    int re = chown (fpath, uid, gid);
+    if(re < 0){
+      update_usage_record(uid, -size);
       return -errno;
     }
 
-    log_data("CHOWN: \n\tPATH: %s\n\tSIZE: %lu\n\tUID: %lu\n", path, return_size, uid);
-    update_user_total(uid, return_size - size);
-    pthread_mutex_unlock(&lock);
-    return return_size;
+    log_data("CHOWN: \n\tPATH: %s\n\tSIZE: %lu\n\tUID: %lu\n", path, size, uid);
+    print_all();
+    return re;
   }
   else {
-    pthread_mutex_unlock(&lock);
     // User's disk quota has been reached
     log_data("QUOTA has been reached!\n");
     return -EDQUOT;
@@ -224,9 +293,8 @@ ntapfuse_truncate (const char *path, off_t off)
   int fsize = get_filesize(fpath);
   if(truncate (fpath, off) == 0){
     log_data("truncate: \n\tPATH: %s\n\tSIZE: %d\n", path, off - fsize);
-    pthread_mutex_lock(&lock);
-    update_user_total(uid, off - fsize);
-    pthread_mutex_unlock(&lock);
+    print_all();
+    update_usage_record(uid, off - fsize);
     return 0;
   }
   else {
@@ -274,21 +342,19 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 
   int uid = get_owner_fd(fi->fh);
 
-  pthread_mutex_lock(&lock);
-  log_data("In write on file:%s\n", fpath);
-  if(reserve_space(uid, size)){
+  if(update_usage_record(uid, size)){
     int return_size = pwrite(fi->fh, buf, size, off);
     if(return_size < 0){
+      update_usage_record(uid, -size);
       return -errno;
     }
 
     log_data("write: \n\tPATH: %s\n\tSIZE: %lu\n\tOFFS: %lu\n", path, return_size, off);
-    update_user_total(uid, return_size - size);
-    pthread_mutex_unlock(&lock);
+    print_all();
+    update_usage_record(uid, return_size - size);
     return return_size;
   }
   else {
-    pthread_mutex_unlock(&lock);
     // User's disk quota has been reached
     log_data("QUOTA has been reached!\n");
     return -EDQUOT;
@@ -411,12 +477,10 @@ void *
 ntapfuse_init (struct fuse_conn_info *conn)
 {
   db_init();
-  pthread_mutex_init(&lock, NULL);
   return (fuse_get_context())->private_data;
 }
 
 void
-ntapfuse_destroy (void *private_data)
-{
-    pthread_mutex_destroy(&lock);
+ntapfuse_destroy (void *private_data){
+	db_close();
 }

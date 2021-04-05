@@ -1,29 +1,39 @@
 #ifndef _BUSINESS_LOGIC_H_
 #define _BUSINESS_LOGIC_H_
 
-#include <sys/types.h>
-#include <stdint.h>
 /*
- * Checks if given user to allowed to do action depending
- * on whether they exceed their quota
- * uint64_t user_id: id number of the user
- * int reservation_size: the number of bytes to reserve
- * returns 1 if action is allowed, 0 if not allowed
+ * Changes the usage total for given user
+ * uint64_t user_id, the inter id representing the user
+ * int32_t total_change: total number of bytes to add to usage
+ * returns 1 if successful, 0 if unsuccessful
  */
-int reserve_space (uid_t user_id, uint64_t reservation_size);
+int update_usage_record(uid_t user_id, int64_t total_change);
 
 /*
- * Updates user byte total in database.
- * 
- * uid_t user_id: id number of the user
- * int64_t byte_total_changed: amount to change user byte total by
- * returns 0 if successful, 1 if not successful
+ * Changes the usage total for given user
+ * uint64_t user_id, the inter id representing the user
+ * int32_t total_change: total number of bytes to add to usage
+ * returns 1 if successful, 0 if unsuccessful
  */
-int update_user_total (uid_t user_id, int64_t byte_total_changed);
+int update_file_record(uid_t user_id, int64_t total_change);
+
+/*
+ * Prints every value in the database to console.
+ */
+void print_all();
 
 /*
  * Initializes the database
+ * returns a uid_t array of users in database with the first element
+ * being the number of users
  */
-int db_init();
+uid_t * db_init();
+
+/*
+ * Closes the database
+ * returns standard return values
+ */
+int db_close();
+
 
 #endif /*_BUSINESS_LOGIC_H_*/

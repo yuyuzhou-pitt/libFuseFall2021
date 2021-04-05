@@ -5,6 +5,8 @@
 #include "common.h"
 #include "ntapfuse_ops.h"
 
+#define PATH_MAX        4096
+
 void fpath(const char *path, char *buf)
 {
 	fullpath(path, buf);

@@ -85,7 +85,7 @@ void htable_remove(htable *ht, void *key);
 bool htable_get(htable *ht, void *key, void **val);
 
 /* 
- * Updates value of key in hashtable
+ * Updates value associated with key in hashtable
  * htable *ht: hashtable
  * void *key: key
  * void *value: new value
