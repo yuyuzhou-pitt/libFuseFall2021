@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <pthread.h>
+#include <sys/types.h>
 
 struct htable_mutex;
 typedef struct htable_mutex htable_mutex;

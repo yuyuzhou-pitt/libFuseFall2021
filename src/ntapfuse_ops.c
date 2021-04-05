@@ -23,6 +23,7 @@
 #include "ntapfuse_ops.h"
 #include "business_logic.h"
 #include "common.h"
+#include "user_locks.h"
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -111,6 +112,7 @@ ntapfuse_mknod (const char *path, mode_t mode, dev_t dev)
   // Need to create file to get the uid later.
   // I don't like this.
   int re = mknod (fpath, mode, dev);
+  
   if(re){
     log_data("mknod: err %d\n", re);
     return -errno;
@@ -168,10 +170,14 @@ ntapfuse_unlink (const char *path)
   long fsize = get_filesize(fpath);
 
   if(unlink (fpath) == 0){
+	lock_user_mutex(uid);
     update_file_record(uid, -1);
     update_usage_record(uid, -fsize);
+	
+	
     log_data("unlink: \n\tPATH: %s\n\tOWNER: %zu\n\tSIZE: %zu\n", path, uid, fsize);
     print_all();
+	unlock_user_mutex(uid);
     return 0;
   }
   else {
@@ -264,21 +270,26 @@ ntapfuse_chown (const char *path, uid_t uid, gid_t gid)
   fullpath (path, fpath);
 
   off_t size = get_filesize(fpath);
-
+  
+  lock_user_mutex(uid);
   if(update_usage_record(uid, size)){
     int re = chown (fpath, uid, gid);
     if(re < 0){
       update_usage_record(uid, -size);
       return -errno;
     }
-
+	
+	
     log_data("CHOWN: \n\tPATH: %s\n\tSIZE: %lu\n\tUID: %lu\n", path, size, uid);
     print_all();
+	unlock_user_mutex(uid);
     return re;
   }
   else {
+	
     // User's disk quota has been reached
     log_data("QUOTA has been reached!\n");
+	unlock_user_mutex(uid);
     return -EDQUOT;
   }
 }
@@ -292,9 +303,13 @@ ntapfuse_truncate (const char *path, off_t off)
   int uid = get_owner(fpath);
   int fsize = get_filesize(fpath);
   if(truncate (fpath, off) == 0){
+	lock_user_mutex(uid);
     log_data("truncate: \n\tPATH: %s\n\tSIZE: %d\n", path, off - fsize);
     print_all();
+	
     update_usage_record(uid, off - fsize);
+	unlock_user_mutex(uid);
+	
     return 0;
   }
   else {
@@ -342,21 +357,27 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 
   int uid = get_owner_fd(fi->fh);
 
+  lock_user_mutex(uid);
   if(update_usage_record(uid, size)){
     int return_size = pwrite(fi->fh, buf, size, off);
     if(return_size < 0){
       update_usage_record(uid, -size);
       return -errno;
     }
-
+	
+	
     log_data("write: \n\tPATH: %s\n\tSIZE: %lu\n\tOFFS: %lu\n", path, return_size, off);
     print_all();
     update_usage_record(uid, return_size - size);
+	
+	unlock_user_mutex(uid);
     return return_size;
   }
   else {
+	
     // User's disk quota has been reached
     log_data("QUOTA has been reached!\n");
+	unlock_user_mutex(uid);
     return -EDQUOT;
   }
 }
@@ -476,11 +497,13 @@ ntapfuse_access (const char *path, int mode)
 void *
 ntapfuse_init (struct fuse_conn_info *conn)
 {
-  db_init();
+  int *uid_arr = db_init();
+  init_user_locks(uid_arr);
   return (fuse_get_context())->private_data;
 }
 
 void
 ntapfuse_destroy (void *private_data){
+	destroy_user_locks();
 	db_close();
 }
