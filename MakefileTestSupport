@@ -1,0 +1,75 @@
+CC ?= gcc
+BUILD_DIR = ./build
+SRC_DIR = ./src
+TEST_DIR = ./unit_tests
+TEST_CFLAGS ?= -DTEST -Wall
+CMOCK_DIR ?= /home/greg/Documents/1980/libFuseFall2021/CMock
+UNITY_DIR ?= /home/greg/Documents/1980/libFuseFall2021/CMock/vendor/unity
+TEST_BUILD_DIR ?= ${BUILD_DIR}/test
+TEST_MAKEFILE = /home/greg/Documents/1980/libFuseFall2021/MakefileTestSupport
+OBJ ?= ${BUILD_DIR}/obj
+OBJ_DIR = ${OBJ}
+
+./build/test/obj/unity.o: /home/greg/Documents/1980/libFuseFall2021/CMock/vendor/unity/src/unity.c
+	${CC} -o $@ -c $< -I /home/greg/Documents/1980/libFuseFall2021/CMock/vendor/unity/src
+
+./build/test/obj/cmock.o: /home/greg/Documents/1980/libFuseFall2021/CMock/src/cmock.c
+	${CC} -o $@ -c $< -I /home/greg/Documents/1980/libFuseFall2021/CMock/vendor/unity/src -I /home/greg/Documents/1980/libFuseFall2021/CMock/src
+
+./build/test/obj/business_logic.o: ./src/business_logic.c
+	${CC} -o $@ -c $< ${TEST_CFLAGS} -I ${SRC_DIR} ${INCLUDE_PATH}
+
+./build/test/runners/runner_test_business_logic.c: ./unit_tests/test_business_logic.c
+	@UNITY_DIR=${UNITY_DIR} ruby ${CMOCK_DIR}/scripts/create_runner.rb ./unit_tests/test_business_logic.c ./build/test/runners/runner_test_business_logic.c
+
+./build/test/obj/runner_test_business_logic.o: ./build/test/runners/runner_test_business_logic.c
+	${CC} -o $@ -c $< ${TEST_CFLAGS} -I ./src -I ./build/test/mocks -I /home/greg/Documents/1980/libFuseFall2021/CMock/vendor/unity/src -I /home/greg/Documents/1980/libFuseFall2021/CMock/src ${INCLUDE_PATH}
+
+./build/test/obj/test_business_logic.o: ./unit_tests/test_business_logic.c ./build/test/obj/business_logic.o ./build/test/mocks/mock_common.o ./build/test/mocks/mock_database.o
+	${CC} -o $@ -c $< ${TEST_CFLAGS} -I ./src -I /home/greg/Documents/1980/libFuseFall2021/CMock/vendor/unity/src -I /home/greg/Documents/1980/libFuseFall2021/CMock/src -I ./build/test/mocks ${INCLUDE_PATH}
+
+./build/test/test_business_logic: ./build/test/obj/test_business_logic.o ./build/test/obj/runner_test_business_logic.o ./build/test/obj/business_logic.o ./build/test/mocks/mock_common.o ./build/test/mocks/mock_database.o  ./build/test/obj/unity.o ./build/test/obj/cmock.o
+	${CC} -o $@ ${LDFLAGS} ./build/test/obj/test_business_logic.o ./build/test/obj/runner_test_business_logic.o ./build/test/obj/business_logic.o ./build/test/mocks/mock_common.o ./build/test/mocks/mock_database.o  ./build/test/obj/unity.o ./build/test/obj/cmock.o
+
+./build/test/test_business_logic.testresult: ./build/test/test_business_logic
+	-./build/test/test_business_logic > ./build/test/test_business_logic.testresult 2>&1
+
+./build/test/obj/htable.o: ./src/htable.c
+	${CC} -o $@ -c $< ${TEST_CFLAGS} -I ${SRC_DIR} ${INCLUDE_PATH}
+
+./build/test/runners/runner_test_htable.c: ./unit_tests/test_htable.c
+	@UNITY_DIR=${UNITY_DIR} ruby ${CMOCK_DIR}/scripts/create_runner.rb ./unit_tests/test_htable.c ./build/test/runners/runner_test_htable.c
+
+./build/test/obj/runner_test_htable.o: ./build/test/runners/runner_test_htable.c
+	${CC} -o $@ -c $< ${TEST_CFLAGS} -I ./src -I ./build/test/mocks -I /home/greg/Documents/1980/libFuseFall2021/CMock/vendor/unity/src -I /home/greg/Documents/1980/libFuseFall2021/CMock/src ${INCLUDE_PATH}
+
+./build/test/obj/test_htable.o: ./unit_tests/test_htable.c ./build/test/obj/htable.o 
+	${CC} -o $@ -c $< ${TEST_CFLAGS} -I ./src -I /home/greg/Documents/1980/libFuseFall2021/CMock/vendor/unity/src -I /home/greg/Documents/1980/libFuseFall2021/CMock/src -I ./build/test/mocks ${INCLUDE_PATH}
+
+./build/test/test_htable: ./build/test/obj/test_htable.o ./build/test/obj/runner_test_htable.o ./build/test/obj/htable.o   ./build/test/obj/unity.o ./build/test/obj/cmock.o
+	${CC} -o $@ ${LDFLAGS} ./build/test/obj/test_htable.o ./build/test/obj/runner_test_htable.o ./build/test/obj/htable.o   ./build/test/obj/unity.o ./build/test/obj/cmock.o
+
+./build/test/test_htable.testresult: ./build/test/test_htable
+	-./build/test/test_htable > ./build/test/test_htable.testresult 2>&1
+
+./build/test/mocks/mock_common.c: ./src/common.h
+	@CMOCK_DIR=${CMOCK_DIR} ruby ${CMOCK_DIR}/scripts/create_mock.rb ./src/common.h
+
+./build/test/mocks/mock_common.o: ./build/test/mocks/mock_common.c ./build/test/mocks/mock_common.h
+	${CC} -o $@ -c $< ${TEST_CFLAGS} -I ./build/test/mocks -I ./src -I /home/greg/Documents/1980/libFuseFall2021/CMock/vendor/unity/src -I /home/greg/Documents/1980/libFuseFall2021/CMock/src ${INCLUDE_PATH}
+
+./build/test/mocks/mock_database.c: ./src/database.h
+	@CMOCK_DIR=${CMOCK_DIR} ruby ${CMOCK_DIR}/scripts/create_mock.rb ./src/database.h
+
+./build/test/mocks/mock_database.o: ./build/test/mocks/mock_database.c ./build/test/mocks/mock_database.h
+	${CC} -o $@ -c $< ${TEST_CFLAGS} -I ./build/test/mocks -I ./src -I /home/greg/Documents/1980/libFuseFall2021/CMock/vendor/unity/src -I /home/greg/Documents/1980/libFuseFall2021/CMock/src ${INCLUDE_PATH}
+
+test_summary:
+	@UNITY_DIR=${UNITY_DIR} ruby ${CMOCK_DIR}/scripts/test_summary.rb 
+
+.PHONY: test_summary
+
+test: ./build/test/test_business_logic.testresult ./build/test/test_htable.testresult test_summary
+
+clean:
+	find ${TEST_BUILD_DIR} -maxdepth 1 -type f -delete

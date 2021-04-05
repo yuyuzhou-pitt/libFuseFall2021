@@ -6,7 +6,7 @@ UNITY_DIR = File.join(CMOCK_DIR, 'vendor', 'unity')
 require "#{UNITY_DIR}/auto/generate_test_runner"
 
 SRC_DIR =  ENV.fetch('SRC_DIR',  './src')
-TEST_DIR = ENV.fetch('TEST_DIR', './test')
+TEST_DIR = ENV.fetch('TEST_DIR', './unit_tests')
 UNITY_SRC = File.join(UNITY_DIR, 'src')
 CMOCK_SRC = File.join(CMOCK_DIR, 'src')
 BUILD_DIR = ENV.fetch('BUILD_DIR', './build')
@@ -40,7 +40,7 @@ File.open(TEST_MAKEFILE, 'w') do |mkfile|
   mkfile.puts "CMOCK_DIR ?= #{CMOCK_DIR}"
   mkfile.puts "UNITY_DIR ?= #{UNITY_DIR}"
   mkfile.puts 'TEST_BUILD_DIR ?= ${BUILD_DIR}/test'
-  mkfile.puts 'TEST_MAKEFILE = ${TEST_BUILD_DIR}/MakefileTestSupport'
+  mkfile.puts "TEST_MAKEFILE = #{TEST_MAKEFILE}"
   mkfile.puts 'OBJ ?= ${BUILD_DIR}/obj'
   mkfile.puts 'OBJ_DIR = ${OBJ}'
   mkfile.puts ''

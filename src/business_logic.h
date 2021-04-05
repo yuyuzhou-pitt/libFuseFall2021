@@ -1,6 +1,8 @@
 #ifndef _BUSINESS_LOGIC_H_
 #define _BUSINESS_LOGIC_H_
 
+#include <sys/types.h>
+
 /*
  * Changes the usage total for given user
  * uint64_t user_id, the inter id representing the user
