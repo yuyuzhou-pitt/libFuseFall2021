@@ -170,14 +170,14 @@ ntapfuse_unlink (const char *path)
   long fsize = get_filesize(fpath);
 
   if(unlink (fpath) == 0){
-	lock_user_mutex(uid);
+	lock_user_mutex((uid_t)uid);
     update_file_record(uid, -1);
     update_usage_record(uid, -fsize);
 	
 	
     log_data("unlink: \n\tPATH: %s\n\tOWNER: %zu\n\tSIZE: %zu\n", path, uid, fsize);
     print_all();
-	unlock_user_mutex(uid);
+	unlock_user_mutex((uid_t)uid);
     return 0;
   }
   else {
@@ -276,6 +276,7 @@ ntapfuse_chown (const char *path, uid_t uid, gid_t gid)
     int re = chown (fpath, uid, gid);
     if(re < 0){
       update_usage_record(uid, -size);
+	  unlock_user_mutex(uid);
       return -errno;
     }
 	
@@ -303,12 +304,12 @@ ntapfuse_truncate (const char *path, off_t off)
   int uid = get_owner(fpath);
   int fsize = get_filesize(fpath);
   if(truncate (fpath, off) == 0){
-	lock_user_mutex(uid);
+	lock_user_mutex((uid_t)uid);
     log_data("truncate: \n\tPATH: %s\n\tSIZE: %d\n", path, off - fsize);
     print_all();
 	
     update_usage_record(uid, off - fsize);
-	unlock_user_mutex(uid);
+	unlock_user_mutex((uid_t)uid);
 	
     return 0;
   }
@@ -357,11 +358,12 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 
   int uid = get_owner_fd(fi->fh);
 
-  lock_user_mutex(uid);
+  lock_user_mutex((uid_t)uid);
   if(update_usage_record(uid, size)){
     int return_size = pwrite(fi->fh, buf, size, off);
     if(return_size < 0){
       update_usage_record(uid, -size);
+	  unlock_user_mutex((uid_t)uid);
       return -errno;
     }
 	
@@ -370,14 +372,14 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
     print_all();
     update_usage_record(uid, return_size - size);
 	
-	unlock_user_mutex(uid);
+	unlock_user_mutex((uid_t)uid);
     return return_size;
   }
   else {
 	
     // User's disk quota has been reached
     log_data("QUOTA has been reached!\n");
-	unlock_user_mutex(uid);
+	unlock_user_mutex((uid_t)uid);
     return -EDQUOT;
   }
 }
@@ -497,7 +499,7 @@ ntapfuse_access (const char *path, int mode)
 void *
 ntapfuse_init (struct fuse_conn_info *conn)
 {
-  int *uid_arr = db_init();
+  uid_t *uid_arr = db_init();
   init_user_locks(uid_arr);
   return (fuse_get_context())->private_data;
 }
