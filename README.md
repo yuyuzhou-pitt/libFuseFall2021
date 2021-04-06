@@ -34,3 +34,12 @@ The filesystem can be unmounted with the following command:
 
     $ sudo umount <mountpoint>
 
+## Unit tests
+
+Unit tests are located in the unit_tests folder and can be executed with the
+following commands:
+
+    $ ruby --version (must be 2.7 or higher)
+    $ git submodule update --init --recursive
+    $ ruby create_makefile.rb
+    $ make -f MakefileTestSupport test
