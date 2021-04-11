@@ -109,17 +109,15 @@ ntapfuse_mknod (const char *path, mode_t mode, dev_t dev)
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
-  // Need to create file to get the uid later.
-  // I don't like this.
-  int re = mknod (fpath, mode, dev);
-  
-  if(re){
-    log_data("mknod: err %d\n", re);
-    return -errno;
-  }
 
-  long uid = get_owner(fpath);
+  long uid = getuid();
   if(update_file_record(uid, 1)){
+    int re = mknod (fpath, mode, dev);
+    if(re){
+      log_data("mknod: err %d\n", re);
+      return -errno;
+    }
+  
     log_data("mknod: \n\tPATH: %s \t %s\n\tOWNER: %zu\n", path, fpath, uid);
     print_all();
     return 0;
@@ -138,16 +136,14 @@ ntapfuse_mkdir (const char *path, mode_t mode)
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
-  // Need to create file to get the uid later.
-  // I don't like this.
-  int re = mkdir(fpath, mode | S_IFDIR);
-  if(re){
-    log_data("mknod: err %d\n", re);
-    return -errno;
-  }
-
-  long uid = get_owner(fpath);
+  long uid = getuid();
   if(update_file_record(uid, 1)){
+    int re = mkdir(fpath, mode | S_IFDIR);
+    if(re){
+      log_data("mkdir: err %d\n", re);
+      return -errno;
+    }
+  
     log_data("mkdir: \n\tPATH: %s\n\tOWNER: %zu\n", path, uid);
     print_all();
     return 0;
@@ -155,7 +151,6 @@ ntapfuse_mkdir (const char *path, mode_t mode)
   else{
     // User's inode quota has been reached
     log_data("INODE QUOTA has been reached!\n");
-    rmdir(fpath);
     return -EDQUOT;
   }
 }
