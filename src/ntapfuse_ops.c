@@ -125,7 +125,6 @@ ntapfuse_mknod (const char *path, mode_t mode, dev_t dev)
   else{
     // User's inode quota has been reached
     log_data("INODE QUOTA has been reached!\n");
-    unlink(fpath);
     return -EDQUOT;
   }
 }
@@ -168,7 +167,6 @@ ntapfuse_unlink (const char *path)
 	lock_user_mutex((uid_t)uid);
     update_file_record(uid, -1);
     update_usage_record(uid, -fsize);
-	
 	
     log_data("unlink: \n\tPATH: %s\n\tOWNER: %zu\n\tSIZE: %zu\n", path, uid, fsize);
     print_all();
