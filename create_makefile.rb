@@ -36,7 +36,7 @@ File.open(TEST_MAKEFILE, 'w') do |mkfile|
   mkfile.puts "BUILD_DIR = #{BUILD_DIR}"
   mkfile.puts "SRC_DIR = #{SRC_DIR}"
   mkfile.puts "TEST_DIR = #{TEST_DIR}"
-  mkfile.puts 'TEST_CFLAGS ?= -DTEST -Wall'
+  mkfile.puts 'TEST_CFLAGS ?= -DTEST -Wall -D_FILE_OFFSET_BITS=64'
   mkfile.puts "CMOCK_DIR ?= #{CMOCK_DIR}"
   mkfile.puts "UNITY_DIR ?= #{UNITY_DIR}"
   mkfile.puts 'TEST_BUILD_DIR ?= ${BUILD_DIR}/test'
