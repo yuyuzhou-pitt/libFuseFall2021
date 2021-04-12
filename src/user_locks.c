@@ -1,9 +1,18 @@
-#include "user_locks.h"
-#include "common.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/types.h>
 
+#include "user_locks.h"
+#include "common.h"
 
+htable_mutex *user_locks_htable;
+
+/*
+ * Inserts a new uid-mutex pair into the hash table
+ * uid_t uid: uid of user
+ * pthread_mutex **lock: pointer to lock that is added
+ */
+void insert_new_mutex(uid_t uid, pthread_mutex **lock);
 
 int init_user_locks(uid_t *uid_arr) {
 	//insert all locks into hash table
