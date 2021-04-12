@@ -26,5 +26,6 @@ fuse_get_context(void);
 
 int unlink(const char *pathname); 
 int link(const char *oldpath, const char *newpath); 
+int mknod(const char *pathname, mode_t mode, dev_t dev);
 
 #endif /*_FUSE_H_*/

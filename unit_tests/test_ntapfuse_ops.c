@@ -24,7 +24,7 @@ struct fuse_context *fs ;
 void setUp(void)
 {
     fs = malloc(sizeof(struct fuse_context));
-    fs -> private_data = "hi";
+    fs -> private_data = "fuse/";
     fuse_get_context_ExpectAndReturn(fs);
     log_data_Ignore();
     print_all_Ignore();
@@ -46,8 +46,8 @@ void test_unlink(void){
 
     unlink_ExpectAnyArgsAndReturn(0);
 
-    update_file_record_ExpectAnyArgsAndReturn(0);
-    update_usage_record_ExpectAnyArgsAndReturn(0);
+    update_file_record_ExpectAnyArgsAndReturn(1);
+    update_usage_record_ExpectAnyArgsAndReturn(1);
 
     TEST_ASSERT_EQUAL_INT(0, ntapfuse_unlink("path"));
 }
@@ -58,19 +58,23 @@ void test_unlink_fail(void){
     TEST_ASSERT_TRUE(ntapfuse_unlink("path"));
 }
 
-void test_link(void){
+void test_mknod(void){
     lock_user_mutex_ExpectAnyArgsAndReturn(0);
     unlock_user_mutex_ExpectAnyArgsAndReturn(0);
 
-    link_ExpectAnyArgsAndReturn(0);
+    update_file_record_ExpectAnyArgsAndReturn(1);
+    mknod_ExpectAndReturn("fuse/path", 1, 2, 0);
 
-    update_file_record_ExpectAnyArgsAndReturn(0);
-
-    TEST_ASSERT_EQUAL_INT(0, ntapfuse_link("path"));
+    TEST_ASSERT_EQUAL_INT(0, ntapfuse_mknod("path", 1, 2));
 }
 
-void test_link_fail(void){
-    link_ExpectAnyArgsAndReturn(1);
+void test_mknod_fail(void){
+    lock_user_mutex_ExpectAnyArgsAndReturn(0);
+    unlock_user_mutex_ExpectAnyArgsAndReturn(0);
 
-    TEST_ASSERT_TRUE(ntapfuse_link("path"));
+    update_file_record_ExpectAnyArgsAndReturn(1);
+    mknod_ExpectAndReturn("fuse/path", 1, 2, -1);
+    update_file_record_ExpectAnyArgsAndReturn(1);
+
+    TEST_ASSERT_TRUE(ntapfuse_mknod("path", 1, 2));
 }
