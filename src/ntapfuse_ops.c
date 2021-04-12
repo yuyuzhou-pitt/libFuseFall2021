@@ -115,6 +115,7 @@ ntapfuse_mknod (const char *path, mode_t mode, dev_t dev)
     int re = mknod (fpath, mode, dev);
     if(re){
       log_data("mknod: err %d\n", re);
+      update_file_record(uid, -1);
       return -errno;
     }
   
@@ -140,6 +141,7 @@ ntapfuse_mkdir (const char *path, mode_t mode)
     int re = mkdir(fpath, mode | S_IFDIR);
     if(re){
       log_data("mkdir: err %d\n", re);
+      update_file_record(uid, -1);
       return -errno;
     }
   
