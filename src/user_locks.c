@@ -12,7 +12,7 @@ htable_mutex *user_locks_htable;
  * uid_t uid: uid of user
  * pthread_mutex **lock: pointer to lock that is added
  */
-void insert_new_mutex(uid_t uid, pthread_mutex **lock);
+void insert_new_mutex(uid_t uid, pthread_mutex_t **lock);
 
 int init_user_locks(uid_t *uid_arr) {
 	//insert all locks into hash table
@@ -58,21 +58,45 @@ void destroy_user_locks() {
 }
 
 int lock_user_mutex(uid_t uid) {
+	uid_t *key = (uid_t *)malloc(sizeof(uid_t));
+	*key = uid;
+	
 	pthread_mutex_t *lock;
 	
-	if(!htable_mutex_get(user_locks_htable, &uid, &lock)) {
+	if(!htable_mutex_get(user_locks_htable, key, &lock)) {
+      	log_data("Could not find lock %d, creating it now...\n", uid);
 		insert_new_mutex(uid, &lock);
 	}
+
+	free(key);
 	
-	return pthread_mutex_lock(lock);
+	int ret = pthread_mutex_lock(lock);
+	if (ret != 0) {
+    	log_data("%d experienced locking failure %d...\n", uid, ret);
+	} else {
+    	log_data("Successful lock of %d!\n", uid);
+	}
+	return ret;
 }
 
 int unlock_user_mutex(uid_t uid) {
+	uid_t *key = (uid_t *)malloc(sizeof(uid_t));
+	*key = uid;
+	
 	pthread_mutex_t *lock;
 	
-	if(!htable_mutex_get(user_locks_htable, &uid, &lock)) {
+	if(!htable_mutex_get(user_locks_htable, key, &lock)) {
+      	log_data("Could not find lock %d\n", uid);
 		return 1;
 	}
+
+	free(key);
 	
-	return pthread_mutex_unlock(lock);
+	int ret = pthread_mutex_unlock(lock);
+	if (ret != 0) {
+    	log_data("%d experienced unlocking failure %d...\n", uid, ret);
+	} else {
+    	log_data("Successful unlock of %d!\n", uid);
+	}
+	return ret;
 }

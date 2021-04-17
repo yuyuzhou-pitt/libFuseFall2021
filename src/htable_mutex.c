@@ -4,6 +4,7 @@
 
 #include "htable.h"
 #include "htable_mutex.h"
+#include "common.h"
 
 static unsigned int fnv1a_hash_uid(const void *in, unsigned int seed);
 static int  htable_uid_eq(const void *a, const void *b);
@@ -61,18 +62,20 @@ void htable_mutex_enum_destroy(htable_mutex_enum *he)
 {
 	htable_enum_destroy((htable_enum *)he);
 }
-
+								// key, ht->seed
 static unsigned int fnv1a_hash_uid(const void *in, unsigned int seed)
 {
 	unsigned int h = seed;
 	unsigned int c;
 	size_t	     i;
 
+	log_data("----Hashing the UID key: %d\n", *((int*)in));
 	for (i=0; i < sizeof(in); i++) {
 		c = ((unsigned char *)in)[i];
 		h ^= c;
 		h *= 16777619;
 	}
+	log_data("----Hashed the value: %u\n", h);
 
 	return h;
 }

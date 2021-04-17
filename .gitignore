@@ -72,3 +72,4 @@ src/.*
 
 # Test related files
 build/*.testresult
+log.txt

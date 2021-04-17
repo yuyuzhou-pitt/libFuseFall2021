@@ -5,7 +5,7 @@
  ===||==     Shell Script Testing     ==||===
     =||================================||=
            ~~{{  Version  1.0  }}~~
-'
+' # umount fs to writeout the DB and then run tests on that
 
 # debug...
 # set -x
@@ -52,13 +52,13 @@ execute_test() {
 if [[ $single_test == "" ]]; then
     printf "Running all tests...\n\n"
     # No test specified, run all tests!
-    for f in ./tests/*.sh; do
+    for f in ./shell_tests/*.sh; do
         execute_test $f
     done
 else
     printf "Running ${single_test/%'.sh'}...\n\n"
     # A particular test should be run...
-    execute_test ./tests/$single_test
+    execute_test ./shell_tests/$single_test
 fi
 
 echo ""
