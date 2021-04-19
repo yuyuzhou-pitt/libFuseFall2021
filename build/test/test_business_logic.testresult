@@ -1,5 +1,13 @@
-./test/test_business_logic.c:16:test_reserve_space:PASS
+./unit_tests/test_business_logic.c:16:test_update_usage_dberror:PASS
+./unit_tests/test_business_logic.c:23:test_update_file_dberror:PASS
+./unit_tests/test_business_logic.c:30:test_update_usage_user_not_exist_sucessfull_add:PASS
+./unit_tests/test_business_logic.c:38:test_update_file_user_not_exist_sucessfull_add:PASS
+./unit_tests/test_business_logic.c:46:test_update_usage_user_not_exist_bad_add:PASS
+./unit_tests/test_business_logic.c:54:test_update_file_user_not_exist_bad_add:PASS
+./unit_tests/test_business_logic.c:62:test_print_all:PASS
+./unit_tests/test_business_logic.c:68:test_db_init:PASS
+./unit_tests/test_business_logic.c:75:test_db_close:PASS
 
 -----------------------
-1 Tests 0 Failures 0 Ignored 
+9 Tests 0 Failures 0 Ignored 
 OK

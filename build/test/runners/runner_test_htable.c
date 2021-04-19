@@ -87,7 +87,7 @@ static void run_test(UnityTestFunction func, const char* name, int line_num)
 /*=======MAIN=====*/
 int main(void)
 {
-  UnityBegin("./test/test_htable.c");
+  UnityBegin("./unit_tests/test_htable.c");
   run_test(test_single_insert, "test_single_insert", 58);
   run_test(test_double_insert, "test_double_insert", 71);
   run_test(test_insert_update_existing_key, "test_insert_update_existing_key", 91);

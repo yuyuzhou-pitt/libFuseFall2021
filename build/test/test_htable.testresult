@@ -1,18 +1,18 @@
-./test/test_htable.c:58:test_single_insert:PASS
-./test/test_htable.c:71:test_double_insert:PASS
-./test/test_htable.c:91:test_insert_update_existing_key:PASS
-./test/test_htable.c:105:test_null_insert:PASS
-./test/test_htable.c:114:test_single_remove:PASS
-./test/test_htable.c:122:test_removes_only_specified_key_and_val:PASS
-./test/test_htable.c:137:test_null_remove:PASS
-./test/test_htable.c:148:test_get_value:PASS
-./test/test_htable.c:158:test_get_false_on_nonexistent_key:PASS
-./test/test_htable.c:169:test_null_get:PASS
-./test/test_htable.c:175:test_update_value:PASS
-./test/test_htable.c:189:test_update_in_place:PASS
-./test/test_htable.c:204:test_enum_next:PASS
-./test/test_htable.c:216:test_enum_next_empty_table:PASS
-./test/test_htable.c:222:test_enum_multiple_items:PASS
+./unit_tests/test_htable.c:58:test_single_insert:PASS
+./unit_tests/test_htable.c:71:test_double_insert:PASS
+./unit_tests/test_htable.c:91:test_insert_update_existing_key:PASS
+./unit_tests/test_htable.c:105:test_null_insert:PASS
+./unit_tests/test_htable.c:114:test_single_remove:PASS
+./unit_tests/test_htable.c:122:test_removes_only_specified_key_and_val:PASS
+./unit_tests/test_htable.c:137:test_null_remove:PASS
+./unit_tests/test_htable.c:148:test_get_value:PASS
+./unit_tests/test_htable.c:158:test_get_false_on_nonexistent_key:PASS
+./unit_tests/test_htable.c:169:test_null_get:PASS
+./unit_tests/test_htable.c:175:test_update_value:PASS
+./unit_tests/test_htable.c:189:test_update_in_place:PASS
+./unit_tests/test_htable.c:204:test_enum_next:PASS
+./unit_tests/test_htable.c:216:test_enum_next_empty_table:PASS
+./unit_tests/test_htable.c:222:test_enum_multiple_items:PASS
 
 -----------------------
 15 Tests 0 Failures 0 Ignored 

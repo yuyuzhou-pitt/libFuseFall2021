@@ -1,0 +1,25 @@
+./unit_tests/test_ntapfuse_ops.c:41:test_unlink:PASS
+./unit_tests/test_ntapfuse_ops.c:53:test_unlink_fail:PASS
+./unit_tests/test_ntapfuse_ops.c:59:test_rmdir:PASS
+./unit_tests/test_ntapfuse_ops.c:70:test_rmdir_fail:PASS
+./unit_tests/test_ntapfuse_ops.c:77:test_mknod:PASS
+./unit_tests/test_ntapfuse_ops.c:87:test_mknod_fail:PASS
+./unit_tests/test_ntapfuse_ops.c:98:test_mknod_fail_update:PASS
+./unit_tests/test_ntapfuse_ops.c:107:test_mkdir:PASS
+./unit_tests/test_ntapfuse_ops.c:117:test_mkdir_fail:PASS
+./unit_tests/test_ntapfuse_ops.c:128:test_mkdir_fail_update:PASS
+./unit_tests/test_ntapfuse_ops.c:138:test_write:PASS
+./unit_tests/test_ntapfuse_ops.c:151:test_write_fail_update:PASS
+./unit_tests/test_ntapfuse_ops.c:162:test_link:PASS
+./unit_tests/test_ntapfuse_ops.c:174:test_link_fail_link:PASS
+./unit_tests/test_ntapfuse_ops.c:188:test_link_fail_update_file:PASS
+./unit_tests/test_ntapfuse_ops.c:198:test_link_fail_update_usage:PASS
+./unit_tests/test_ntapfuse_ops.c:210:test_chown:PASS
+./unit_tests/test_ntapfuse_ops.c:224:test_chown_fail_chown:PASS
+./unit_tests/test_ntapfuse_ops.c:240:test_chown_fail_update_file:PASS
+./unit_tests/test_ntapfuse_ops.c:252:test_chown_fail_update_usage:PASS
+./unit_tests/test_ntapfuse_ops.c:297:test_truncate_fail_update:PASS
+
+-----------------------
+21 Tests 0 Failures 0 Ignored 
+OK
