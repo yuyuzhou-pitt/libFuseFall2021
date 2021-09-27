@@ -22,6 +22,7 @@
 
 #include "ntapfuse_ops.h"
 
+// Standard C IO libraries.
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -32,6 +33,7 @@
 
 char base[PATH_MAX];
 
+// Appears to be linking NetApp FUSE functions with standard FUSE interface.
 struct fuse_operations ntapfuse_ops = {
   .getattr = ntapfuse_getattr,
   .readlink = ntapfuse_readlink,
@@ -63,6 +65,8 @@ struct fuse_operations ntapfuse_ops = {
   .init = ntapfuse_init,
 };
 
+
+// Called if user doesn't provide program with correct command line arguments.
 void
 usage ()
 {
@@ -74,6 +78,7 @@ usage ()
 int
 main (int argc, char *argv[])
 {
+  // If user doesn't provide all necessary arguments, do nothing and tell them what they need to provide.
   if (argc < 3)
     usage ();
 

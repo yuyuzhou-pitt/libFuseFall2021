@@ -195,15 +195,49 @@ ntapfuse_read (const char *path, char *buf, size_t size, off_t off,
   return pread (fi->fh, buf, size, off) < 0 ? -errno : size;
 }
 
+
+
+
+
 int
 ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 	    struct fuse_file_info *fi)
 {
+  // Get full path, starts out every function
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
-  return pwrite (fi->fh, buf, size, off) < 0 ? -errno : size;
+  // Write data to desired file, then close it.
+  if (pwrite (fi->fh, buf, size, off) < 0) { return -errno; }
+  close(fi->fh);
+
+  // Set flags so log file is opened with append
+  fi->flags = fi->flags | O_APPEND;
+
+  // Attempt to open file
+  if (ntapfuse_open("/log", fi) != 0) {
+	// Create the log file with appropriate rw permissions if needed
+	ntapfuse_mknod("/log", S_IFREG | 0644, 0); 
+	// Try opening file again, return error if it fails
+	if (ntapfuse_open("/log", fi) != 0) { return -1; }
+  }
+
+  // Message to log to file
+  const char * log_message = "File written.\n";
+  size_t log_size = strlen(log_message);
+
+  // Actually write our log message to the file
+  write (fi->fh, log_message, log_size);
+
+  // Return size, like original version
+  // This might need to include the log write now?
+  // Also unsure if closing file is needed since original
+  // write implementation didn't close the file
+  return size;
 }
+
+
+
 
 int
 ntapfuse_statfs (const char *path, struct statvfs *buf)
