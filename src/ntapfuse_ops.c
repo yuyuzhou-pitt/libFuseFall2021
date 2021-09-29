@@ -255,7 +255,7 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 
   //Create a string that we will writ to the log file
   char str[100];
-  snprintf(str, sizeof(str),"File: %s    Inode: %ld    User: %d   Size: %ld bytes    Time: %s", path, inode, userID, size, asctime(time_info));
+  snprintf(str, sizeof(str),"File: %s\tInode: %ld\tUser: %d\tSize: %ld bytes\tTime: %s", path, inode, userID, size, asctime(time_info));
   
   // Actually write our log message to the file
   if(write(log_file_descriptor, str, strlen(str)) < 0) {
