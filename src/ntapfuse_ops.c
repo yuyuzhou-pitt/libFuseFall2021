@@ -32,6 +32,11 @@
 #include <sys/xattr.h>
 #include <sys/types.h>
 
+//Added vfs.h to get the inode of a file
+#include <sys/vfs.h>
+//Include time.h to convert to local time
+#include <time.h>
+
 /**
  * Appends the path of the root filesystem to the given path, returning
  * the result in buf.
@@ -209,30 +214,61 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 
   // Write data to desired file, then close it.
   if (pwrite (fi->fh, buf, size, off) < 0) { return -errno; }
-  close(fi->fh);
 
-  // Set flags so log file is opened with append
-  fi->flags = fi->flags | O_APPEND;
+  //Keep the file descriptor of the file we're writing to.
+  u_int64_t file_descriptor = fi->fh;
 
-  // Attempt to open file
-  if (ntapfuse_open("/log", fi) != 0) {
-	// Create the log file with appropriate rw permissions if needed
-	ntapfuse_mknod("/log", S_IFREG | 0644, 0); 
-	// Try opening file again, return error if it fails
-	if (ntapfuse_open("/log", fi) != 0) { return -1; }
+  //Get the full path of the log file
+  char log_path[PATH_MAX];
+  fullpath("/log", log_path);
+
+  //Get the full path of the write file
+  //char write_path[PATH_MAX];
+  //fullpath(path, write_path);
+
+  //Open the log file with flags to append and create a new log file if it does not exist
+  int log_file_descriptor = open(log_path, O_WRONLY | O_APPEND | O_CREAT, 0644);  //need fullpath of log to open
+  if(log_file_descriptor < 0) {
+    return -errno;
+  }
+  
+  //Get the file_stat struct of the file so we can get things like Inode and modification time
+  struct stat file_stat;
+  int ret;
+  if(fstat(file_descriptor, &file_stat) < 0) {
+    return -errno;
   }
 
-  // Message to log to file
-  const char * log_message = "File written.\n";
-  size_t log_size = strlen(log_message);
+  //Get the Inode of a file
+  ino_t inode = file_stat.st_ino;
 
+  //Get the time of the file at modification time
+  time_t raw_time = file_stat.st_mtime;
+  struct tm * time_info;
+
+  //Convert the integer given for modification time to a more comprehensive local time
+  time(&raw_time);
+  time_info = localtime(&raw_time);
+
+  //Get the user id of the user writing to the file
+  uid_t userID = fuse_get_context()->uid;
+
+  //Create a string that we will writ to the log file
+  char str[100];
+  snprintf(str, sizeof(str),"File: %s    Inode: %ld    User: %d   Size: %ld bytes    Time: %s", path, inode, userID, size, asctime(time_info));
+  
   // Actually write our log message to the file
-  write (fi->fh, log_message, log_size);
+  if(write(log_file_descriptor, str, strlen(str)) < 0) {
+    return -errno;
+  }
 
-  // Return size, like original version
-  // This might need to include the log write now?
-  // Also unsure if closing file is needed since original
-  // write implementation didn't close the file
+  //Close file we're writing to
+  close(fi->fh);
+
+  //Close log file
+  close(log_file_descriptor);
+
+  //Return size as originally.
   return size;
 }
 
