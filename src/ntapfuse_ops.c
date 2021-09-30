@@ -254,8 +254,11 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
   uid_t userID = fuse_get_context()->uid;
 
   //Create a string that we will writ to the log file
-  char str[100];
-  snprintf(str, sizeof(str),"File: %s\tInode: %ld\tUser: %d\tSize: %ld bytes\tTime: %s", path, inode, userID, size, asctime(time_info));
+  // TODO: get exact size by measuring places of numeric arguments, current versioni may break with
+  // things like high byte count, longer userID or inode, etc
+  char * format = "File: %s\tInode: %ld\tUser: %d\tSize: %ld bytes\tTime: %s";
+  char str[strlen(format) + strlen(path) + 32]; // 32 is for other fields, includes extra for now
+  snprintf(str, sizeof(str), format, path, inode, userID, size, asctime(time_info));
   
   // Actually write our log message to the file
   if(write(log_file_descriptor, str, strlen(str)) < 0) {
