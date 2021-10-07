@@ -28,6 +28,7 @@
 #include <limits.h>
 #include <string.h>
 #include <unistd.h>
+#include <mysql/mysql.h>
 
 #include <sys/xattr.h>
 #include <sys/types.h>
@@ -256,6 +257,21 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
   //Create a string that we will writ to the log file
   // TODO: get exact size by measuring places of numeric arguments, current versioni may break with
   // things like high byte count, longer userID or inode, etc
+  
+  //This section of code requires the database be set up on your individual system
+  //Expects that a table has been created TODO: make database + table if does not exist yet
+  //creates MYSQL database object
+  MYSQL *con = mysql_init(NULL);
+  //initializes connection to MYSQL database, assumes quota database has been made
+  mysql_real_connect(con, "localhost", "root", "KeepTrying123", "quota", 0, NULL, 0);
+  char sql_statement[512];
+  //creates SQL statement to update user_data, ASSUMES user ALREADY EXISTS
+  sprintf(sql_statement, "UPDATE user_data SET data = data + %ld WHERE user = %d", size, userID);
+  //executes MYSQL statement
+  mysql_query(con, sql_statement);
+  mysql_close(con);
+  
+  
   char * format = "File: %s\tInode: %ld\tUser: %d\tSize: %ld bytes\tTime: %s";
   char str[strlen(format) + strlen(path) + 32]; // 32 is for other fields, includes extra for now
   snprintf(str, sizeof(str), format, path, inode, userID, size, asctime(time_info));
