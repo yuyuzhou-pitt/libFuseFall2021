@@ -20,6 +20,22 @@ src directory:
     $ make
     $ sudo make install
 
+
+
+
+Install mysql
+    $ sudo apt install mysql-server
+    $ sudo mysql_secure_installation
+
+Select your password strength and create a password
+Answer yes to all prompts
+
+    $ sudo mysql -u root -p
+    $ CREATE DATABASE quota;
+    $ USE quota;
+    $ CREATE TABLE user_data (user int, data bigInt DEFAULT 0);
+    $ quit
+
 ## Mounting the Filesystem
 
 The filesystem can be mounted with the following command:
