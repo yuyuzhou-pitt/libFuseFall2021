@@ -202,9 +202,6 @@ ntapfuse_read (const char *path, char *buf, size_t size, off_t off,
 }
 
 
-
-
-
 int
 ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 	    struct fuse_file_info *fi)
@@ -213,19 +210,13 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
-  // Write data to desired file, then close it.
-  if (pwrite (fi->fh, buf, size, off) < 0) { return -errno; }
-
-  //Keep the file descriptor of the file we're writing to.
-  u_int64_t file_descriptor = fi->fh;
-
   //Get the full path of the log file
   char log_path[PATH_MAX];
   fullpath("/log", log_path);
-
+  
   //Get the full path of the write file
   //char write_path[PATH_MAX];
-  //fullpath(path, write_path);
+  //(path, write_path);
 
   //Open the log file with flags to append and create a new log file if it does not exist
   int log_file_descriptor = open(log_path, O_WRONLY | O_APPEND | O_CREAT, 0644);  //need fullpath of log to open
@@ -233,10 +224,21 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
     return -errno;
   }
   
+  // Write data to desired file, then close it.
+  if (pwrite (fi->fh, buf, size, off) < 0) { 
+    write(log_file_descriptor, "pwrite failed \n", 15);
+    return -errno; 
+  }
+
+  //Keep the file descriptor of the file we're writing to.
+  u_int64_t file_descriptor = fi->fh;
+
+  
   //Get the file_stat struct of the file so we can get things like Inode and modification time
   struct stat file_stat;
   int ret;
   if(fstat(file_descriptor, &file_stat) < 0) {
+    write(log_file_descriptor, "fstat failed \n", 14);
     return -errno;
   }
 
@@ -259,16 +261,29 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
   // things like high byte count, longer userID or inode, etc
   
   //This section of code requires the database be set up on your individual system
-  //Expects that a table has been created TODO: make database + table if does not exist yet
+  //Expects that a table has been created TODO: make table if does not exist yet
   //creates MYSQL database object
-  MYSQL *con = mysql_init(NULL);
+  MYSQL *con;
+  if ((con = mysql_init(NULL))==NULL){
+  	write(log_file_descriptor, "DB Init failed\n", 17);
+  	
+  }
   //initializes connection to MYSQL database, assumes quota database has been made
-  mysql_real_connect(con, "localhost", "root", "KeepTrying123", "quota", 0, NULL, 0);
+  if ((mysql_real_connect(con, "localhost", "root", "KeepTrying123", "quota", 0, NULL, 0)) ==NULL){
+  	write(log_file_descriptor, "DB Conn failed\n", 17);
+  }
   char sql_statement[512];
-  //creates SQL statement to update user_data, ASSUMES user ALREADY EXISTS
-  sprintf(sql_statement, "UPDATE user_data SET data = data + %ld WHERE user = %d", size, userID);
+  char sql_error[512];
+  //creates SQL statement to create a table if it does not exist
+  sprintf(sql_statement, "CREATE TABLE IF NOT EXISTS user_data(user int PRIMARY KEY NOT NULL, data bigint DEFAULT 0)");
+  mysql_query(con, sql_statement);
+  //reset statement string
+  sql_statement[0]='\0';
+  //Update user file
+  sprintf(sql_statement, "INSERT INTO user_data VALUES (%d, %ld) ON DUPLICATE KEY UPDATE data = data + %ld",userID, size, size);
   //executes MYSQL statement
   mysql_query(con, sql_statement);
+  //close connection
   mysql_close(con);
   
   
