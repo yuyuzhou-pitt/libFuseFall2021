@@ -23,12 +23,14 @@
 #include "ntapfuse_ops.h"
 #include <stdio.h>
 
+#include <stdlib.h>
+
 #include <errno.h>
 #include <dirent.h>
 #include <limits.h>
 #include <string.h>
 #include <unistd.h>
-#include <mysql/mysql.h>
+//#include <mysql/mysql.h>
 
 #include <sys/xattr.h>
 #include <sys/types.h>
@@ -214,16 +216,13 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
   char log_path[PATH_MAX];
   fullpath("/log", log_path);
   
-  //Get the full path of the write file
-  //char write_path[PATH_MAX];
-  //(path, write_path);
-
   //Open the log file with flags to append and create a new log file if it does not exist
   int log_file_descriptor = open(log_path, O_WRONLY | O_APPEND | O_CREAT, 0644);  //need fullpath of log to open
   if(log_file_descriptor < 0) {
     return -errno;
   }
   
+  // ERROR HANDLING
   // Write data to desired file, then close it.
   if (pwrite (fi->fh, buf, size, off) < 0) { 
     write(log_file_descriptor, "pwrite failed \n", 15);
@@ -256,37 +255,67 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
   //Get the user id of the user writing to the file
   uid_t userID = fuse_get_context()->uid;
 
-  //Create a string that we will writ to the log file
-  // TODO: get exact size by measuring places of numeric arguments, current versioni may break with
-  // things like high byte count, longer userID or inode, etc
-  
-  //This section of code requires the database be set up on your individual system
-  //Expects that a table has been created TODO: make table if does not exist yet
-  //creates MYSQL database object
-  MYSQL *con;
-  if ((con = mysql_init(NULL))==NULL){
-  	write(log_file_descriptor, "DB Init failed\n", 17);
-  	
-  }
-  //initializes connection to MYSQL database, assumes quota database has been made
-  if ((mysql_real_connect(con, "localhost", "root", "KeepTrying123", "quota", 0, NULL, 0)) ==NULL){
-  	write(log_file_descriptor, "DB Conn failed\n", 17);
-  }
-  char sql_statement[512];
-  char sql_error[512];
-  //creates SQL statement to create a table if it does not exist
-  sprintf(sql_statement, "CREATE TABLE IF NOT EXISTS user_data(user int PRIMARY KEY NOT NULL, data bigint DEFAULT 0)");
-  mysql_query(con, sql_statement);
-  //reset statement string
-  sql_statement[0]='\0';
-  //Update user file
-  sprintf(sql_statement, "INSERT INTO user_data VALUES (%d, %ld) ON DUPLICATE KEY UPDATE data = data + %ld",userID, size, size);
-  //executes MYSQL statement
-  mysql_query(con, sql_statement);
-  //close connection
-  mysql_close(con);
-  
-  
+
+
+
+  // NEW STUFF
+
+  	// Open log file with c standard library
+	FILE * lp;
+	lp = fopen(log_path, "a+");
+
+	// Create a temp file to write to
+  	char temp_path[PATH_MAX];
+  	fullpath("/temp", temp_path);
+	FILE * temp;
+	temp = fopen(temp_path, "w+");
+
+	// Variables that are passed by reference into sscanf
+	int uid;
+	int used;
+	int max;
+
+	// char * that stores the current line being read
+	char line[80];
+
+	// Loop through all lines in original log file
+	while (fgets(line, 80, lp) != NULL) {
+
+		// Make sure sscanf got the right number of items read
+		if (sscanf(line, "%d\t%d\t%d\n", &uid, &used, &max) != 3) { /* TODO: Error handling */ }
+
+		// Write line unchanged to temp file if it doesn't match
+		if (uid != userID) {
+			fputs(line, temp);
+			continue;
+		}
+		
+		// Check and enforce space guidelines
+		if (used + size > max) { /* TODO: Deny write if not enought space */ }
+
+		// Update size
+		used += size;
+
+		// Write updated data to temp file
+		fprintf(temp, "%d\t%d\t%d\n", uid, used, max);
+	}
+
+	// TODO: Add user if not found in file
+
+	// Close files
+	fclose(lp);
+	fclose(temp);
+
+  	char swap_path[PATH_MAX];
+  	fullpath("/swap", swap_path);
+
+	rename(log_path, swap_path); // log -> swap (keep ref to delete later)
+	rename(temp_path, log_path); // temp -> log (what we wrote to is now the real log file)
+	remove(swap_path);	     // delete swap (original log)
+
+
+
+	/*
   char * format = "File: %s\tInode: %ld\tUser: %d\tSize: %ld bytes\tTime: %s";
   char str[strlen(format) + strlen(path) + 32]; // 32 is for other fields, includes extra for now
   snprintf(str, sizeof(str), format, path, inode, userID, size, asctime(time_info));
@@ -295,6 +324,7 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
   if(write(log_file_descriptor, str, strlen(str)) < 0) {
     return -errno;
   }
+  */
 
   //Close file we're writing to
   close(fi->fh);
