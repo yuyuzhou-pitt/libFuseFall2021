@@ -209,128 +209,99 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 	    struct fuse_file_info *fi)
 {
   // Get full path, starts out every function
-  char fpath[PATH_MAX];
-  fullpath (path, fpath);
+  //char fpath[PATH_MAX];
+  //fullpath (path, fpath);
 
-  //Get the full path of the log file
+  // ------------------------------------------------------------------
+  // ------------------------------------------------------------------
+  // STEP 1: OPEN LOG FILE AND CHECK IF USER HAS ENOUGH AVAILABLE SPACE
+  // ------------------------------------------------------------------
+  // ------------------------------------------------------------------
+
+  // Open log file with c standard library
   char log_path[PATH_MAX];
   fullpath("/log", log_path);
-  
-  //Open the log file with flags to append and create a new log file if it does not exist
-  int log_file_descriptor = open(log_path, O_WRONLY | O_APPEND | O_CREAT, 0644);  //need fullpath of log to open
-  if(log_file_descriptor < 0) {
-    return -errno;
+  FILE * lp = fopen(log_path, "a+");
+
+  // Create a temp file to write to
+  char temp_path[PATH_MAX];
+  fullpath("/temp", temp_path);
+  FILE * temp = fopen(temp_path, "w+");
+
+  uid_t userID = fuse_get_context()->uid;
+  int uid, used, max;   // Variables that are passed by reference into sscanf
+  char line[80];        // char * that stores the current line being read
+  int user_found = 0;   // Boolean for determining if we need to create a user
+
+  // Iterate through all lines in original log file
+  while (fgets(line, 80, lp) != NULL) {
+
+	  // Make sure sscanf got the right number of items read
+	  if (sscanf(line, "%d\t%d\t%d\n", &uid, &used, &max) != 3) { /* TODO: Error handling */ }
+
+	  // Write line unchanged to temp file if it doesn't match
+	  if (user_found || uid != userID) {
+		  fputs(line, temp);
+		  continue;
+	  }
+		
+	  // Check and enforce space guidelines
+	  if (used + size > max) { 
+  		close(fi->fh);     // Close file being written
+  		fclose(lp);        // Close orig file
+  		fclose(temp);      // Close temp file
+		remove(temp_path); // Delete temp file
+		return -1;         // Return error TODO FIND CORRECT CODE FOR NOT ENOUGH SPACE
+	  }
+
+	  // Update size
+	  used += size;
+
+	  // Write updated data to temp file
+	  fprintf(temp, "%d\t%d\t%d\n", uid, used, max);
+	  user_found = 1;
   }
+
+  // If the program goes through the whole file and doesn't find the user,
+  // we need to add them to the file with a default setup.
+  if (!user_found) { fprintf(temp, "%d\t%d\t%d\n", userID, size, 4096); }
+  // TODO: This does not check for capacity on first ever write, will allow
+  // for more writing than allowed
+
+  // Close files
+  fclose(lp);
+  fclose(temp);
+
+
+  // TODO: THIS SWAP STUFF SHOULD BE AFTER STEP 2 JUST IN CASE THE FILE
+  // WRITE FAILS FOR SOME REASON
+  // File write successful? Do swap and new file
+  // File write unsuccessful? Just put original file back
+
+
+  // Swap our original file and our temp file
+  char swap_path[PATH_MAX];
+  fullpath("/swap", swap_path); // We just need a path to swap, no file necessary here
+
+  rename(log_path, swap_path); // log -> swap (keep ref to delete later)
+  rename(temp_path, log_path); // temp -> log (what we wrote to is now the real log file)
+  remove(swap_path);	       // delete swap (original log)
+
+
+  // -------------------------------------------------------
+  // -------------------------------------------------------
+  // -------- STEP 2: WRITE ACTUAL DATA TO FILE ------------
+  // -------------------------------------------------------
+  // -------------------------------------------------------
   
-  // ERROR HANDLING
   // Write data to desired file, then close it.
-  if (pwrite (fi->fh, buf, size, off) < 0) { 
-    write(log_file_descriptor, "pwrite failed \n", 15);
-    return -errno; 
-  }
+  pwrite (fi->fh, buf, size, off);
 
   //Keep the file descriptor of the file we're writing to.
   u_int64_t file_descriptor = fi->fh;
 
-  
-  //Get the file_stat struct of the file so we can get things like Inode and modification time
-  struct stat file_stat;
-  int ret;
-  if(fstat(file_descriptor, &file_stat) < 0) {
-    write(log_file_descriptor, "fstat failed \n", 14);
-    return -errno;
-  }
-
-  //Get the Inode of a file
-  ino_t inode = file_stat.st_ino;
-
-  //Get the time of the file at modification time
-  time_t raw_time = file_stat.st_mtime;
-  struct tm * time_info;
-
-  //Convert the integer given for modification time to a more comprehensive local time
-  time(&raw_time);
-  time_info = localtime(&raw_time);
-
-  //Get the user id of the user writing to the file
-  uid_t userID = fuse_get_context()->uid;
-
-
-
-
-  // NEW STUFF
-
-  	// Open log file with c standard library
-	FILE * lp;
-	lp = fopen(log_path, "a+");
-
-	// Create a temp file to write to
-  	char temp_path[PATH_MAX];
-  	fullpath("/temp", temp_path);
-	FILE * temp;
-	temp = fopen(temp_path, "w+");
-
-	// Variables that are passed by reference into sscanf
-	int uid;
-	int used;
-	int max;
-
-	// char * that stores the current line being read
-	char line[80];
-
-	// Loop through all lines in original log file
-	while (fgets(line, 80, lp) != NULL) {
-
-		// Make sure sscanf got the right number of items read
-		if (sscanf(line, "%d\t%d\t%d\n", &uid, &used, &max) != 3) { /* TODO: Error handling */ }
-
-		// Write line unchanged to temp file if it doesn't match
-		if (uid != userID) {
-			fputs(line, temp);
-			continue;
-		}
-		
-		// Check and enforce space guidelines
-		if (used + size > max) { /* TODO: Deny write if not enought space */ }
-
-		// Update size
-		used += size;
-
-		// Write updated data to temp file
-		fprintf(temp, "%d\t%d\t%d\n", uid, used, max);
-	}
-
-	// TODO: Add user if not found in file
-
-	// Close files
-	fclose(lp);
-	fclose(temp);
-
-  	char swap_path[PATH_MAX];
-  	fullpath("/swap", swap_path);
-
-	rename(log_path, swap_path); // log -> swap (keep ref to delete later)
-	rename(temp_path, log_path); // temp -> log (what we wrote to is now the real log file)
-	remove(swap_path);	     // delete swap (original log)
-
-
-
-	/*
-  char * format = "File: %s\tInode: %ld\tUser: %d\tSize: %ld bytes\tTime: %s";
-  char str[strlen(format) + strlen(path) + 32]; // 32 is for other fields, includes extra for now
-  snprintf(str, sizeof(str), format, path, inode, userID, size, asctime(time_info));
-  
-  // Actually write our log message to the file
-  if(write(log_file_descriptor, str, strlen(str)) < 0) {
-    return -errno;
-  }
-  */
-
-  //Close file we're writing to
+  // Close before opening other files
   close(fi->fh);
-
-  //Close log file
-  close(log_file_descriptor);
 
   //Return size as originally.
   return size;
