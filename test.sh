@@ -64,7 +64,7 @@ cd mp_test/
 # -------------------- TESTS GO HERE ------------------------
 
 #########################################################################
-### TEST 1 - CREATE FILE USING ECHO - NO LOG PRESENT ####################
+### TEST 1 - CREATE FILE USING ECHO - NO DATABSE PRESENT ################
 #########################################################################
 
 echo ""
@@ -78,8 +78,8 @@ echo "1234567812345678123456781234567812345678123456781234567812345678" > number
 #SLEEP
 sleep .5
 
-#echo "2:    Checking db file exists"
-if [ -a log ];
+echo "2:    Checking db file exists"
+if [ -a db ];
 then
     #echo "FILE EXISTS"
     :
@@ -102,10 +102,10 @@ numbers_user=$(stat -c '%u' "numbers")
 #echo $numbers_user
 
 numbers_test_str="${numbers_user} ${numbers_size} 4096"
-logfile="$(cat log)"
+dbfile="$(cat db)"
 
 expected=$(echo $numbers_test_str)
-actual=$(echo $logfile)
+actual=$(echo $dbfile)
 
 if [[ "$expected" == "$actual" ]] 
 then
@@ -114,7 +114,7 @@ else
     echo "TEST 1 FAILED"
 fi
 
-rm log
+rm db
 rm numbers
 echo ""
 
@@ -136,8 +136,8 @@ echo "1234567812345678123456781234567812345678123456781234567812345678" > number
 #SLEEP
 sleep .5
 
-#echo "2:    Checking db file exists"
-if [ -a log ];
+echo "2:    Checking db file exists"
+if [ -a db ];
 then
     #echo "FILE EXISTS"
     :
@@ -207,7 +207,6 @@ echo ""
 ### TEST 3 - CREATING TWO DIFFERENT FILES WITH SAME USER ################
 #########################################################################
 
-echo ""
 echo "########################################################################
 ### TEST 3 - CREATING TWO DIFFERENT FILES WITH SAME USER ###############
 ########################################################################"
@@ -244,10 +243,10 @@ numbers_user=$(stat -c '%u' "numbers")
 #echo $numbers_user
 
 numbers_test_str="${numbers_user} ${numbers_size} 4096"
-logfile="$(cat log)"
+dbfile="$(cat db)"
 
 expected=$(echo $numbers_test_str)
-actual=$(echo $logfile)
+actual=$(echo $dbfile)
 
 if [[ "$expected" == "$actual" ]] 
 then

@@ -40,6 +40,9 @@
 //Include time.h to convert to local time
 #include <time.h>
 
+
+
+
 /**
  * Appends the path of the root filesystem to the given path, returning
  * the result in buf.
@@ -47,10 +50,37 @@
 void
 fullpath (const char *path, char *buf)
 {
+
   char *basedir = (char *) fuse_get_context ()->private_data;
 
   strcpy (buf, basedir);
   strcat (buf, path);
+}
+
+// Function to make log writes easier
+void func_log(const char * message) {
+  int write_all_functions = 0;
+
+  if (!write_all_functions) {
+	return;
+  }
+
+  // Code to write to a file whenever the function is called.
+  char log_path[PATH_MAX];
+  fullpath("/log", log_path);
+  FILE * log = fopen(log_path, "a+");
+  fputs(message, log);
+  fclose(log);
+}
+
+// Use to log important writes? Might not need
+void user_log(const char * message) {
+  // Code to write to a file whenever the function is called.
+  char log_path[PATH_MAX];
+  fullpath("/log", log_path);
+  FILE * log = fopen(log_path, "a+");
+  fputs(message, log);
+  fclose(log);
 }
 
 
@@ -61,6 +91,8 @@ fullpath (const char *path, char *buf)
 int
 ntapfuse_getattr (const char *path, struct stat *buf)
 {
+  func_log("getattr called\n");
+
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
@@ -70,6 +102,7 @@ ntapfuse_getattr (const char *path, struct stat *buf)
 int
 ntapfuse_readlink (const char *path, char *target, size_t size)
 {
+  func_log("readlink called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
@@ -79,6 +112,7 @@ ntapfuse_readlink (const char *path, char *target, size_t size)
 int
 ntapfuse_mknod (const char *path, mode_t mode, dev_t dev)
 {
+  func_log("mknod called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
@@ -88,6 +122,7 @@ ntapfuse_mknod (const char *path, mode_t mode, dev_t dev)
 int
 ntapfuse_mkdir (const char *path, mode_t mode)
 {
+  func_log("mkdir called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
@@ -97,6 +132,7 @@ ntapfuse_mkdir (const char *path, mode_t mode)
 int
 ntapfuse_unlink (const char *path)
 {
+  func_log("unlink called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
@@ -106,6 +142,7 @@ ntapfuse_unlink (const char *path)
 int
 ntapfuse_rmdir (const char *path)
 {
+  func_log("rmdir called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
@@ -115,6 +152,7 @@ ntapfuse_rmdir (const char *path)
 int
 ntapfuse_symlink (const char *path, const char *link)
 {
+  func_log("symlink called\n");
   char flink[PATH_MAX];
   fullpath (link, flink);
 
@@ -124,6 +162,7 @@ ntapfuse_symlink (const char *path, const char *link)
 int
 ntapfuse_rename (const char *src, const char *dst)
 {
+  func_log("rename called\n");
   char fsrc[PATH_MAX];
   fullpath (src, fsrc);
 
@@ -136,6 +175,7 @@ ntapfuse_rename (const char *src, const char *dst)
 int
 ntapfuse_link (const char *src, const char *dst)
 {
+  func_log("link called\n");
   char fsrc[PATH_MAX];
   fullpath (src, fsrc);
 
@@ -148,6 +188,7 @@ ntapfuse_link (const char *src, const char *dst)
 int
 ntapfuse_chmod (const char *path, mode_t mode)
 {
+  func_log("chmod called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
@@ -157,6 +198,7 @@ ntapfuse_chmod (const char *path, mode_t mode)
 int
 ntapfuse_chown (const char *path, uid_t uid, gid_t gid)
 {
+  func_log("chown called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
@@ -166,6 +208,7 @@ ntapfuse_chown (const char *path, uid_t uid, gid_t gid)
 int
 ntapfuse_truncate (const char *path, off_t off)
 {
+  func_log("truncate called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
@@ -175,6 +218,7 @@ ntapfuse_truncate (const char *path, off_t off)
 int
 ntapfuse_utime (const char *path, struct utimbuf *buf)
 {
+  func_log("utime called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
@@ -184,6 +228,7 @@ ntapfuse_utime (const char *path, struct utimbuf *buf)
 int
 ntapfuse_open (const char *path, struct fuse_file_info *fi)
 {
+  func_log("open called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
@@ -200,6 +245,7 @@ int
 ntapfuse_read (const char *path, char *buf, size_t size, off_t off,
 	   struct fuse_file_info *fi)
 {
+  func_log("read called\n");
   return pread (fi->fh, buf, size, off) < 0 ? -errno : size;
 }
 
@@ -208,6 +254,7 @@ int
 ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 	    struct fuse_file_info *fi)
 {
+  func_log("write called\n");
   // Get full path, starts out every function
   //char fpath[PATH_MAX];
   //fullpath (path, fpath);
@@ -218,10 +265,10 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
   // ------------------------------------------------------------------
   // ------------------------------------------------------------------
 
-  // Open log file with c standard library
-  char log_path[PATH_MAX];
-  fullpath("/log", log_path);
-  FILE * lp = fopen(log_path, "a+");
+  // Open db file with c standard library
+  char db_path[PATH_MAX];
+  fullpath("/db", db_path);
+  FILE * lp = fopen(db_path, "a+");
 
   // Create a temp file to write to
   char temp_path[PATH_MAX];
@@ -233,7 +280,16 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
   char line[80];        // char * that stores the current line being read
   int user_found = 0;   // Boolean for determining if we need to create a user
 
-  // Iterate through all lines in original log file
+  struct stat file_stat;
+  fstat(fi->fh,  &file_stat); // TODO ERROR CHECK
+
+  time_t raw_time = file_stat.st_mtime;
+  struct tm * time_info;
+
+  time(&raw_time);
+  time_info = localtime(&raw_time);
+
+  // Iterate through all lines in original db file
   while (fgets(line, 80, lp) != NULL) {
 
 	  // Make sure sscanf got the right number of items read
@@ -260,14 +316,41 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 	  // Write updated data to temp file
 	  fprintf(temp, "%d\t%d\t%d\n", uid, used, max);
 	  user_found = 1;
+
+	// Add database operation to log
+	char log_path[PATH_MAX];
+	fullpath("/log", log_path);
+	FILE * log = fopen(log_path, "a+");
+	fprintf(log, "User %d wrote %d bytes - %s", userID, size, asctime(time_info));
+	fclose(log);
   }
 
   // If the program goes through the whole file and doesn't find the user,
   // we need to add them to the file with a default setup.
-  if (!user_found) { fprintf(temp, "%d\t%d\t%d\n", userID, size, 4096); }
-  // TODO: This does not check for capacity on first ever write, will allow
-  // for more writing than allowed
+  if (!user_found) {
+	char log_path[PATH_MAX];
+	fullpath("/log", log_path);
+	FILE * log = fopen(log_path, "a+");
 
+	fprintf(log, "Entry for user %d added to database - %s", userID, asctime(time_info));
+
+	  // Ensure user's first write will not be over max size
+	  if (size > 4096) { // TODO CHANGE TO A DEFAULT QUOTA VARIABLE
+		// Still add user, just set used to 0.
+	  	fprintf(temp, "%d\t%d\t%d\n", userID, 0, 4096);
+
+  		close(fi->fh);     // Close file being written
+  		fclose(lp);        // Close orig file
+  		fclose(temp);      // Close temp file
+		remove(temp_path); // Delete temp file
+		fclose(log);
+		return -1;         // Return error TODO FIND CORRECT CODE FOR NOT ENOUGH SPACE
+	  }
+	  fprintf(temp, "%d\t%d\t%d\n", userID, size, 4096);
+
+	fprintf(log, "User %d wrote %d bytes - %s", userID, size, asctime(time_info));
+	fclose(log);
+  }
   // Close files
   fclose(lp);
   fclose(temp);
@@ -283,8 +366,8 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
   char swap_path[PATH_MAX];
   fullpath("/swap", swap_path); // We just need a path to swap, no file necessary here
 
-  rename(log_path, swap_path); // log -> swap (keep ref to delete later)
-  rename(temp_path, log_path); // temp -> log (what we wrote to is now the real log file)
+  rename(db_path, swap_path); // log -> swap (keep ref to delete later)
+  rename(temp_path, db_path); // temp -> log (what we wrote to is now the real log file)
   remove(swap_path);	       // delete swap (original log)
 
 
@@ -313,6 +396,7 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 int
 ntapfuse_statfs (const char *path, struct statvfs *buf)
 {
+  func_log("statfs called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
@@ -322,12 +406,14 @@ ntapfuse_statfs (const char *path, struct statvfs *buf)
 int
 ntapfuse_release (const char *path, struct fuse_file_info *fi)
 {
+  func_log("release called\n");
   return close (fi->fh) ? -errno : 0;
 }
 
 int
 ntapfuse_fsync (const char *path, int datasync, struct fuse_file_info *fi)
 {
+  func_log("fsync called\n");
   if (datasync)
     return fdatasync (fi->fh) ? -errno : 0;
   else
@@ -338,6 +424,7 @@ int
 ntapfuse_setxattr (const char *path, const char *name, const char *value,
 	       size_t size, int flags)
 {
+  func_log("setxattr called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
@@ -347,6 +434,7 @@ ntapfuse_setxattr (const char *path, const char *name, const char *value,
 int
 ntapfuse_getxattr (const char *path, const char *name, char *value, size_t size)
 {
+  func_log("getxattr called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
@@ -357,6 +445,7 @@ ntapfuse_getxattr (const char *path, const char *name, char *value, size_t size)
 int
 ntapfuse_listxattr (const char *path, char *list, size_t size)
 {
+  func_log("listxattr called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
@@ -366,6 +455,7 @@ ntapfuse_listxattr (const char *path, char *list, size_t size)
 int
 ntapfuse_removexattr (const char *path, const char *name)
 {
+  func_log("removexattr called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
@@ -375,6 +465,7 @@ ntapfuse_removexattr (const char *path, const char *name)
 int
 ntapfuse_opendir (const char *path, struct fuse_file_info *fi)
 {
+  func_log("opendir called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
@@ -391,6 +482,7 @@ int
 ntapfuse_readdir (const char *path, void *buf, fuse_fill_dir_t fill, off_t off,
 	      struct fuse_file_info *fi)
 {
+  func_log("readdir called\n");
   struct dirent *de = NULL;
 
   while ((de = readdir ((DIR *) fi->fh)) != NULL)
@@ -410,12 +502,14 @@ ntapfuse_readdir (const char *path, void *buf, fuse_fill_dir_t fill, off_t off,
 int
 ntapfuse_releasedir (const char *path, struct fuse_file_info *fi)
 {
+  func_log("releasedir called\n");
   return closedir ((DIR *) fi->fh) ? -errno : 0;
 }
 
 int
 ntapfuse_access (const char *path, int mode)
 {
+  func_log("access called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
