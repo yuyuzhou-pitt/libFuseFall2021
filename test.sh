@@ -69,7 +69,7 @@ cd mp_test/
 
 echo ""
 echo "########################################################################
-### TEST 1 - CREATE FILE USING ECHO - NO LOG PRESENT ###################
+### TEST 1 - CREATE FILE USING ECHO - NO db PRESENT ###################
 ########################################################################"
 
 #echo "1:    Creating numbers file"
@@ -85,13 +85,13 @@ then
     :
 else
     echo "!!!!!!!!!!!!!!!!!!!!"
-    echo "LOG FILE DOES NOT EXISTS"
+    echo "db FILE DOES NOT EXISTS"
     echo ""
 fi
 
-#echo "DISPLAYING LOG FILE:"
+#echo "DISPLAYING db FILE:"
 #echo ""
-#cat log
+#cat db
 #echo ""
 
 numbers_size=$(stat --format=%s "numbers")
@@ -143,13 +143,13 @@ then
     :
 else
     echo "!!!!!!!!!!!!!!!!!!!!"
-    echo "LOG FILE DOES NOT EXISTS"
+    echo "db FILE DOES NOT EXISTS"
     echo ""
 fi
 
-#echo "DISPLAYING LOG FILE:"
+#echo "DISPLAYING db FILE:"
 #echo ""
-#cat log
+#cat db
 #echo ""
 
 numbers_size=$(stat --format=%s "numbers")
@@ -160,10 +160,10 @@ numbers_user=$(stat -c '%u' "numbers")
 #echo $numbers_user
 
 numbers_test_str="${numbers_user} ${numbers_size} 4096"
-logfile="$(cat log)"
+dbfile="$(cat db)"
 
 expected=$(echo $numbers_test_str)
-actual=$(echo $logfile)
+actual=$(echo $dbfile)
 
 if [[ "$expected" == "$actual" ]] 
 then
@@ -184,11 +184,11 @@ numbers_user=$(stat -c '%u' "numbers")
 #echo $numbers_user
 
 numbers_test_str="${numbers_user} ${numbers_size} 4096"
-logfile="$(cat log)"
-#cat log
+dbfile="$(cat db)"
+#cat db
 
 expected=$(echo $numbers_test_str)
-actual=$(echo $logfile)
+actual=$(echo $dbfile)
 
 if [[ "$expected" == "$actual" ]] 
 then
@@ -199,13 +199,14 @@ else
 fi
 
 rm numbers
-rm log
+rm db
 
 echo ""
 
 #########################################################################
 ### TEST 3 - CREATING TWO DIFFERENT FILES WITH SAME USER ################
 #########################################################################
+
 
 echo "########################################################################
 ### TEST 3 - CREATING TWO DIFFERENT FILES WITH SAME USER ###############
@@ -220,19 +221,19 @@ echo "1234567812345678123456781234567812345678123456781234567812345678" > number
 sleep .5
 
 #echo "2:    Checking db file exists"
-if [ -a log ];
+if [ -a db ];
 then
     #echo "FILE EXISTS"
     :
 else
     echo "!!!!!!!!!!!!!!!!!!!!"
-    echo "LOG FILE DOES NOT EXISTS"
+    echo "db FILE DOES NOT EXISTS"
     echo ""
 fi
 
-#echo "DISPLAYING LOG FILE:"
+#echo "DISPLAYING db FILE:"
 #echo ""
-#cat log
+#cat db
 #echo ""
 
 numbers_size=$(stat --format=%s "numbers")
@@ -264,19 +265,19 @@ echo "ABCDEFGHIJKLMNOPQRSTUVWXYZ" > letters
 sleep .5
 
 #echo "2:    Checking db file exists"
-if [ -a log ];
+if [ -a db ];
 then
     #echo "FILE EXISTS"
     :
 else
     echo "!!!!!!!!!!!!!!!!!!!!"
-    echo "LOG FILE DOES NOT EXISTS"
+    echo "db FILE DOES NOT EXISTS"
     echo ""
 fi
 
-#echo "DISPLAYING LOG FILE:"
+#echo "DISPLAYING db FILE:"
 #echo ""
-#cat log
+#cat db
 #echo ""
 
 letters_size=$(stat --format=%s "letters")
@@ -297,13 +298,13 @@ fi
 updated_size=$(($letters_size + $numbers_size))
 
 test_str="${letters_user} ${updated_size} 4096"
-logfile="$(cat log)"
+dbfile="$(cat db)"
 
 #echo "$test_str"
-#echo "$logfile"
+#echo "$dbfile"
 
 expected=$(echo $test_str)
-actual=$(echo $logfile)
+actual=$(echo $dbfile)
 
 if [[ "$expected" == "$actual" ]] 
 then
@@ -315,7 +316,7 @@ fi
 
 rm numbers
 rm letters 
-rm log
+rm db
 
 echo ""
 
@@ -337,19 +338,19 @@ echo "1234567812345678123456781234567812345678123456781234567812345678" > number
 sleep .5
 
 #echo "2:    Checking db file exists"
-if [ -a log ];
+if [ -a db ];
 then
     #echo "FILE EXISTS"
     :
 else
     echo "!!!!!!!!!!!!!!!!!!!!"
-    echo "LOG FILE DOES NOT EXISTS"
+    echo "db FILE DOES NOT EXISTS"
     echo ""
 fi
 
-#echo "DISPLAYING LOG FILE:"
+#echo "DISPLAYING db FILE:"
 #echo ""
-#cat log
+#cat db
 #echo ""
 
 numbers_size=$(stat --format=%s "numbers")
@@ -360,10 +361,10 @@ numbers_user=$(stat -c '%u' "numbers")
 #echo $numbers_user
 
 numbers_test_str="${numbers_user} ${numbers_size} 4096"
-logfile="$(cat log)"
+dbfile="$(cat db)"
 
 expected=$(echo $numbers_test_str)
-actual=$(echo $logfile)
+actual=$(echo $dbfile)
 
 if [[ "$expected" == "$actual" ]] 
 then
@@ -377,13 +378,13 @@ fi
 rm numbers
 
 numbers_test_str="${numbers_user} 0 4096"
-logfile="$(cat log)"
+dbfile="$(cat db)"
 
 #echo "$numbers_test_str"
-#echo "$logfile"
+#echo "$dbfile"
 
 expected=$(echo $numbers_test_str)
-actual=$(echo $logfile)
+actual=$(echo $dbfile)
 
 if [[ "$expected" == "$actual" ]] 
 then
@@ -393,7 +394,7 @@ else
     echo "TEST 4 FAILED"
 fi
 
-rm log
+rm db
 
 echo ""
 
@@ -416,19 +417,19 @@ echo "1234567812345678123456781234567812345678123456781234567812345678" > number
 sleep .5
 
 #echo "2:    Checking db file exists"
-if [ -a log ];
+if [ -a db ];
 then
     #echo "FILE EXISTS"
     :
 else
     echo "!!!!!!!!!!!!!!!!!!!!"
-    echo "LOG FILE DOES NOT EXISTS"
+    echo "db FILE DOES NOT EXISTS"
     echo ""
 fi
 
-#echo "DISPLAYING LOG FILE:"
+#echo "DISPLAYING db FILE:"
 #echo ""
-#cat log
+#cat db
 #echo ""
 
 numbers_size=$(stat --format=%s "numbers")
@@ -439,13 +440,13 @@ numbers_user=$(stat -c '%u' "numbers")
 #echo $numbers_user
 
 numbers_test_str="${numbers_user} ${numbers_size} 4096"
-logfile="$(cat log)"
+dbfile="$(cat db)"
 
 #echo "$numbers_test_str"
-#echo "$logfile"
+#echo "$dbfile"
 
 expected=$(echo $numbers_test_str)
-actual=$(echo $logfile)
+actual=$(echo $dbfile)
 
 if [[ "$expected" == "$actual" ]] 
 then
@@ -463,19 +464,19 @@ echo "ABCDEFGHIJKLMNOPQRSTUVWXYZ" > letters
 sleep .5
 
 #echo "2:    Checking db file exists"
-if [ -a log ];
+if [ -a db ];
 then
     #echo "FILE EXISTS"
     :
 else
     echo "!!!!!!!!!!!!!!!!!!!!"
-    echo "LOG FILE DOES NOT EXISTS"
+    echo "db FILE DOES NOT EXISTS"
     echo ""
 fi
 
-#echo "DISPLAYING LOG FILE:"
+#echo "DISPLAYING db FILE:"
 #echo ""
-#cat log
+#cat db
 #echo ""
 
 letters_size=$(stat --format=%s "letters")
@@ -496,19 +497,19 @@ fi
 updated_size=$(($letters_size + $numbers_size))
 
 test_str="${letters_user} ${updated_size} 4096"
-logfile="$(cat log)"
+dbfile="$(cat db)"
 
 #echo "$test_str"
-#echo "$logfile"
+#echo "$dbfile"
 
 expected=$(echo $test_str)
-actual=$(echo $logfile)
+actual=$(echo $dbfile)
 
 if [[ "$expected" == "$actual" ]] 
 then
     :
 else
-    echo "LOG FILE NOT UPDATED FOR SECOND FILE CREATION"
+    echo "db FILE NOT UPDATED FOR SECOND FILE CREATION"
 fi
 
 #################################################### REMOVE 1ST FILE ######################################################
@@ -518,13 +519,13 @@ rm numbers
 updated_size=$(($updated_size - $numbers_size))
 
 test_str="${letters_user} ${updated_size} 4096"
-logfile="$(cat log)"
+dbfile="$(cat db)"
 
 #echo "$test_str"
-#echo "$logfile"
+#echo "$dbfile"
 
 expected=$(echo $test_str)
-actual=$(echo $logfile)
+actual=$(echo $dbfile)
 
 if [[ "$expected" == "$actual" ]] 
 then
@@ -535,7 +536,7 @@ else
 fi
 
 rm letters 
-rm log
+rm db
 
 echo ""
 
@@ -557,19 +558,19 @@ echo "1234567812345678123456781234567812345678123456781234567812345678" > number
 sleep .5
 
 #echo "2:    Checking db file exists"
-if [ -a log ];
+if [ -a db ];
 then
     #echo "FILE EXISTS"
     :
 else
     echo "!!!!!!!!!!!!!!!!!!!!"
-    echo "LOG FILE DOES NOT EXISTS"
+    echo "db FILE DOES NOT EXISTS"
     echo ""
 fi
 
-#echo "DISPLAYING LOG FILE:"
+#echo "DISPLAYING db FILE:"
 #echo ""
-#cat log
+#cat db
 #echo ""
 
 numbers_size=$(stat --format=%s "numbers")
@@ -580,14 +581,15 @@ numbers_user=$(stat -c '%u' "numbers")
 #echo $numbers_user
 
 numbers_test_str="${numbers_user} ${numbers_size} 4096"
-logfile="$(cat log)"
+dbfile="$(cat db)"
 
 expected=$(echo $numbers_test_str)
-actual=$(echo $logfile)
+actual=$(echo $dbfile)
 
 if [[ "$expected" == "$actual" ]] 
 then
-    echo "TEST 6 SUCCEEDED"
+    #echo "TEST 6 SUCCEEDED"
+    :
 else
     #echo "TEST 6 FAILED"
     :
@@ -610,7 +612,7 @@ cd mp_test
 #################################################### CREATE SECOND FILE ######################################################
 
 
-rm log
+rm db
 rm numbers
 echo ""
 
