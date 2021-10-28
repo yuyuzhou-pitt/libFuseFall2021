@@ -63,7 +63,7 @@ cd mp_test/
 # -------------------- TESTS GO HERE ------------------------
 
 #########################################################################
-### TEST 1 - CREATE FILE USING ECHO - NO LOG PRESENT ####################
+### TEST 1 - CREATE FILE USING ECHO - NO DATABSE PRESENT ################
 #########################################################################
 
 echo "EXECUTING TEST 1!"
@@ -75,7 +75,7 @@ echo "1234567812345678123456781234567812345678123456781234567812345678" > number
 sleep .5
 
 echo "2:    Checking db file exists"
-if [ -a log ];
+if [ -a db ];
 then
     echo "FILE EXISTS"
 else
@@ -83,9 +83,9 @@ else
     echo "FILE DOES NOT EXISTS"
 fi
 
-echo "DISPLAYING LOG FILE:"
+echo "DISPLAYING DATABASE:"
 echo ""
-cat log
+cat db
 echo ""
 
 numbers_size=$(stat --format=%s "numbers")
@@ -96,10 +96,10 @@ numbers_user=$(stat -c '%u' "numbers")
 #echo $numbers_user
 
 numbers_test_str="${numbers_user} ${numbers_size} 4096"
-logfile="$(cat log)"
+dbfile="$(cat db)"
 
 expected=$(echo $numbers_test_str)
-actual=$(echo $logfile)
+actual=$(echo $dbfile)
 
 if [[ "$expected" == "$actual" ]] 
 then
@@ -108,7 +108,7 @@ else
     echo "TEST 1 FAILED"
 fi
 
-rm log
+rm db
 rm numbers
 
 
@@ -125,7 +125,7 @@ echo "1234567812345678123456781234567812345678123456781234567812345678" > number
 sleep .5
 
 echo "2:    Checking db file exists"
-if [ -a log ];
+if [ -a db ];
 then
     echo "FILE EXISTS"
 else
@@ -133,9 +133,9 @@ else
     echo "FILE DOES NOT EXISTS"
 fi
 
-echo "DISPLAYING LOG FILE:"
+echo "DISPLAYING DATABASE:"
 echo ""
-cat log
+cat db
 echo ""
 
 numbers_size=$(stat --format=%s "numbers")
@@ -146,10 +146,10 @@ numbers_user=$(stat -c '%u' "numbers")
 #echo $numbers_user
 
 numbers_test_str="${numbers_user} ${numbers_size} 4096"
-logfile="$(cat log)"
+dbfile="$(cat db)"
 
 expected=$(echo $numbers_test_str)
-actual=$(echo $logfile)
+actual=$(echo $dbfile)
 
 if [[ "$expected" == "$actual" ]] 
 then
