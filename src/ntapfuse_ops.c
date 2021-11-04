@@ -34,6 +34,7 @@
 
 #include <sys/xattr.h>
 #include <sys/types.h>
+#include <sys/file.h>
 
 //Added vfs.h to get the inode of a file
 #include <sys/vfs.h>
@@ -265,6 +266,26 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
   // ------------------------------------------------------------------
   // ------------------------------------------------------------------
 
+  char lock_path[PATH_MAX];
+  fullpath("/lock", lock_path);
+
+  int count = 1;
+  int lock = 0;
+  int lfd = 0;
+  while (1) {
+
+	  lfd = open(lock_path, O_RDWR | O_CREAT, 0666);
+	  lock = flock(lfd, LOCK_EX | LOCK_NB);
+	  if (lock == 0) {
+		break;
+	  }
+	  sleep(1);
+	  count += 1;
+	  if (count > 10) {
+		  return -1;
+	  }
+  }
+
   // Open db file with c standard library
   char db_path[PATH_MAX];
   fullpath("/db", db_path);
@@ -385,6 +406,9 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 
   // Close before opening other files
   close(fi->fh);
+
+  close(lfd);
+  remove(lock_path);
 
   //Return size as originally.
   return size;
