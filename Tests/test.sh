@@ -4,6 +4,9 @@
 # Exit if any command fails
 set -e
 
+#Go back to main Fuse directory
+cd ..
+
 # Build program
 make
 sudo make install
@@ -35,7 +38,7 @@ mkdir bd_test/
 mkdir mp_test/
 
 # Mount directory
-ntapfuse mount bd_test/ mp_test/
+ntapfuse mount bd_test/ mp_test/ -o allow_other
 
 #Test make sure bd_test was created
 if [ -d bd_test/ ];
@@ -78,7 +81,7 @@ echo "1234567812345678123456781234567812345678123456781234567812345678" > number
 #SLEEP
 sleep .5
 
-echo "2:    Checking db file exists"
+#echo "2:    Checking db file exists"
 if [ -a db ];
 then
     #echo "FILE EXISTS"
@@ -136,7 +139,7 @@ echo "1234567812345678123456781234567812345678123456781234567812345678" > number
 #SLEEP
 sleep .5
 
-echo "2:    Checking db file exists"
+#echo "2:    Checking db file exists"
 if [ -a db ];
 then
     #echo "FILE EXISTS"
@@ -595,22 +598,39 @@ else
     :
 fi
 
-#################################################### CREATE ANOTHER USER ######################################################
+#################################################### CREATE ANOTHER USER  ######################################################
 
-sudo useradd testuser -G sudo
+#Create the user to be used in the test
+sudo useradd -m -p Password -G sudo testuser
 
+#Traverse back to the testscripts file
 cd ..
-
-expect testuser.exp
-
-su testuser
-
-echo "TEST USER RUNNING"
-
-cd mp_test
+cd Tests
 
 #################################################### CREATE SECOND FILE ######################################################
 
+#Make the script to be executed by the testuser executable
+chmod +x test6_testuser.sh
+
+#Make testuser execute script for this test.
+sudo -u testuser ./test6_testuser.sh
+
+#Traverse back to the mountpoint
+cd ..
+cd mp_test
+
+cd aiphngbspio
+
+#################################################### TEST THE OTHER FILE ######################################################
+
+#Get the expected size of the testuser's file
+hello_testuser_size=$(stat --format=%s "hello_testuser")
+
+#Get the user of the testuser's file
+hello_testuser_user=$(stat -c '%u' "hello_testuser")
+
+test6_str="${numbers_test_str} ${hello_testuser_user} ${hello_testuser_size} 4096"
+echo $test6_str
 
 rm db
 rm numbers
@@ -638,3 +658,7 @@ sudo umount mp_test/
 # Remove test directories
 rm -rf bd_test/
 rm -rf mp_test/
+
+# Remove testusers
+sudo pkill -KILL -u testuser
+sudo userdel -r testuser
