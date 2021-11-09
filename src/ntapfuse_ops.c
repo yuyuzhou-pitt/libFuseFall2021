@@ -60,7 +60,7 @@ fullpath (const char *path, char *buf)
 
 // Function to make log writes easier
 void func_log(const char * message) {
-  int write_all_functions = 0;
+  int write_all_functions = 1;
 
   if (!write_all_functions) {
 	return;
@@ -84,6 +84,101 @@ void user_log(const char * message) {
   fclose(log);
 }
 
+/*
+helper function for db writes
+takes the userID of the file owner, the change in file size in off_t
+off_t is a signed variable, so a negative number will decrement log
+CREDIT: Connor, taken from write implementation
+*/
+int
+db_update(uid_t userID, off_t size)
+{
+//open database path, creates if nonexistant
+  char db_path[PATH_MAX];
+  fullpath("/db", db_path);
+  FILE * lp = fopen(db_path, "a+");
+  
+//create temporary path for database ops
+  //creates if nonexistant
+  char temp_path[PATH_MAX];
+  fullpath("/temp", temp_path);
+  FILE * temp = fopen(temp_path, "w+");
+  int used, max, uid;   // Variables passed by reference into sscanf
+  char line[80];        // char * stores the current line being read
+  int user_found = 0;   // Boolean for determining if we need to create a user
+  
+//iterates through database
+  while (fgets(line, 80, lp) != NULL) {
+
+	  // Make sure sscanf got the right number of items read
+	  if (sscanf(line, "%d\t%d\t%d\n", &uid, &used, &max) != 3) { /* TODO: Error handling */ }
+
+	  // Write line unchanged to temp file if it doesn't match
+	  if (user_found || uid != userID) {
+		  fputs(line, temp);
+		  continue;
+	  }
+		
+	  // Check and enforce space guidelines
+	  if (used + size > max) { 
+  		fclose(lp);        // Close orig file
+  		fclose(temp);      // Close temp file
+		remove(temp_path); // Delete temp file
+		return -1;         // Return error TODO FIND CORRECT CODE FOR NOT ENOUGH SPACE
+	  }
+
+	  // Update size
+	  used += size;
+
+	  // Write updated data to temp file
+	  fprintf(temp, "%d\t%d\t%d\n", uid, used, max);
+	  user_found = 1;
+
+	// Add database operation to log
+	char log_path[PATH_MAX];
+	fullpath("/log", log_path);
+	FILE * log = fopen(log_path, "a+");
+	fprintf(log, "User %d wrote %d bytes and now has %d \n", uid, size, used);
+	fclose(log);
+
+  }
+    if (!user_found) {
+	char log_path[PATH_MAX];
+	fullpath("/log", log_path);
+	FILE * log = fopen(log_path, "a+");
+
+	fprintf(log, "Entry for user %d added to database", userID);
+
+	  // Ensure user's first write will not be over max size
+	  if (size > 4096) { // TODO CHANGE TO A DEFAULT QUOTA VARIABLE
+		// Still add user, just set used to 0.
+	  	fprintf(temp, "%d\t%d\t%d\n", userID, 0, 4096);
+
+  		fclose(lp);        // Close orig file
+  		fclose(temp);      // Close temp file
+		remove(temp_path); // Delete temp file
+		fclose(log);
+		return -1;         // Return error TODO FIND CORRECT CODE FOR NOT ENOUGH SPACE
+	  }
+	  fprintf(temp, "%d\t%d\t%d\n", userID, size, 4096);
+
+	fprintf(log, "User %d wrote %d bytes", userID, size);
+	fclose(log);
+  }
+  // Close files
+  fclose(lp);
+  fclose(temp);
+  
+  //Swap files
+  char swap_path[PATH_MAX];
+  fullpath("/swap", swap_path); // We just need a path to swap, no file necessary here
+
+  rename(db_path, swap_path); // log -> swap (keep ref to delete later)
+  rename(temp_path, db_path); // temp -> log (what we wrote to is now the real log file)
+  remove(swap_path);	       // delete swap (original log)
+
+  return 0;
+};
 
 /* The following functions describe FUSE operations. Each operation appends
    the path of the root filesystem to the given path in order to give the
@@ -206,14 +301,25 @@ ntapfuse_chown (const char *path, uid_t uid, gid_t gid)
   return chown (fpath, uid, gid) ? -errno : 0;
 }
 
+//truncate reduces or expands a file to length # of bytes.
 int
-ntapfuse_truncate (const char *path, off_t off)
+ntapfuse_truncate (const char *path, off_t length)
 {
   func_log("truncate called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
+  //open file information
+  struct stat file_stat;
+  stat(fpath,  &file_stat); // TODO ERROR CHECK
+  
+  off_t change;
+  if(file_stat.st_size > length)change= length - file_stat.st_size;
+  if(file_stat.st_size < length)change= file_stat.st_size -length;
+  if(file_stat.st_size = length)change= 0;
+  //callstat db helper method, fails on return
+  if(db_update(file_stat.st_uid, change)!=0 ) return -1;
 
-  return truncate (fpath, off) ? -errno : 0;
+  return truncate (fpath, length) ? -errno : 0;
 }
 
 int
@@ -249,7 +355,6 @@ ntapfuse_read (const char *path, char *buf, size_t size, off_t off,
   func_log("read called\n");
   return pread (fi->fh, buf, size, off) < 0 ? -errno : size;
 }
-
 
 int
 ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
@@ -296,6 +401,7 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
   fullpath("/temp", temp_path);
   FILE * temp = fopen(temp_path, "w+");
 
+//update user userID to get the file's owner
   uid_t userID = fuse_get_context()->uid;
   int uid, used, max;   // Variables that are passed by reference into sscanf
   char line[80];        // char * that stores the current line being read
