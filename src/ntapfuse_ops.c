@@ -231,6 +231,9 @@ ntapfuse_unlink (const char *path)
   func_log("unlink called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
+  struct stat file_stat;
+  stat(fpath,  &file_stat);
+  if(db_update(file_stat.st_uid, -file_stat.st_size)!=0 ) return -1;
 
   return unlink (fpath) ? -errno : 0;
 }
