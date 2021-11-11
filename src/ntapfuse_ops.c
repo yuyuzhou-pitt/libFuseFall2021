@@ -225,14 +225,17 @@ ntapfuse_mkdir (const char *path, mode_t mode)
   return mkdir (fpath, mode | S_IFDIR) ? -errno : 0;
 }
 
+//TODO: add checks for proper deletion of files!
 int
 ntapfuse_unlink (const char *path)
 {
   func_log("unlink called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
+  //get the stat block of the file
   struct stat file_stat;
   stat(fpath,  &file_stat);
+  //update the db with the inverse of the file size
   if(db_update(file_stat.st_uid, -file_stat.st_size)!=0 ) return -1;
 
   return unlink (fpath) ? -errno : 0;
@@ -244,7 +247,13 @@ ntapfuse_rmdir (const char *path)
   func_log("rmdir called\n");
   char fpath[PATH_MAX];
   fullpath (path, fpath);
-
+  //TODO: add checks for path not existing, file not being empty
+  
+  //get file's stat block
+  struct stat dir_stat;
+  stat(fpath,  &dir_stat);
+  //update directory
+  if(db_update(dir_stat.st_uid, -4)!=0 ) return -1;
   return rmdir (fpath) ? -errno : 0;
 }
 
