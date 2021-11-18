@@ -83,6 +83,66 @@ void user_log(const char * message) {
   fputs(message, log);
   fclose(log);
 }
+//Function that creates a table of file paths, and user ids
+//check owner of a given file
+int owner_db_query(const char *path){
+  char usrdb_path[PATH_MAX];
+  fullpath("/user db", db_path);
+  FILE * lp = fopen(db_path, "a+");
+  
+
+  int uid;   // Variables passed by reference into sscanf
+  char line* = NULL;        // char * stores the current line being read
+  char dbpath* = NULL;
+  int size;
+  int read;
+  int user_found = 0;   // Boolean for determining if we need to create a user
+  while ((read =fgets(line, size, lp)) != NULL) { 
+  //fgets with an empty line and size should return number of bytes read
+  if (sscanf(line, "%d\t%s\n", &uid, &dbpath) != 2) {
+  	if(strcmp(path, dbpath){
+  	//found our match
+  	return uid;
+  	}
+  }
+  //end of file reached, file not found
+  return -1;
+
+}
+
+//update owner of a given file
+int owner_db_update(const char *path, uid usr){
+  char usrdb_path[PATH_MAX];
+  fullpath("/userdb", db_path);
+  FILE * lp = fopen(db_path, "a+");
+  
+//create temporary path for database ops
+  //creates if nonexistant
+  char temp_path[PATH_MAX];
+  fullpath("/usr temp", temp_path);
+  FILE * temp = fopen(temp_path, "w+");
+  int uid;   // Variables passed by reference into sscanf
+  char line* = NULL;        // char * stores the current line being read
+  char dbpath* = NULL;
+  int size;
+  int read;
+  int user_found = 0;   // Boolean for determining if we need to create a user
+  while ((read =fgets(line, size, lp)) != NULL) { 
+  //fgets with an empty line and size should return number of bytes read
+  if (sscanf(line, "%d\t%s\n", &uid, &dbpath) != 2) {
+  	if(strcmp(path, dbpath){
+  	//found our match
+  	return uid;
+  	//
+  }
+
+}
+
+//append a new file
+int owner_db_newfile(){
+
+}
+
 
 /*
 helper function for db writes
