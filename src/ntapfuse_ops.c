@@ -83,27 +83,26 @@ void user_log(const char * message) {
   fputs(message, log);
   fclose(log);
 }
+
 //Function that creates a table of file paths, and user ids
 //check owner of a given file
 int owner_db_query(const char *path){
   char usrdb_path[PATH_MAX];
-  fullpath("/user db", db_path);
-  FILE * lp = fopen(db_path, "a+");
+  fullpath("/user db", usrdb_path);
+  FILE * lp = fopen(usrdb_path, "a+");
   
 
-  int uid;   // Variables passed by reference into sscanf
-  char line* = NULL;        // char * stores the current line being read
-  char dbpath* = NULL;
-  int size;
-  int read;
-  int user_found = 0;   // Boolean for determining if we need to create a user
-  while ((read =fgets(line, size, lp)) != NULL) { 
-  //fgets with an empty line and size should return number of bytes read
-  if (sscanf(line, "%d\t%s\n", &uid, &dbpath) != 2) {
-  	if(strcmp(path, dbpath){
-  	//found our match
-  	return uid;
-  	}
+  int uid;   
+  int size = PATH_MAX + 80;
+  char line[size];        
+  char db_path[PATH_MAX];
+  int user_found = 0;   
+
+  while (fgets(line, size, lp) != NULL) { 
+    if (sscanf(line, "%d\t%s\n", &uid, &db_path) != 2) { /* TODO: Error Handling */ }
+    if(strcmp(path, db_path) == 0) {
+      return uid;
+    }
   }
   //end of file reached, file not found
   return -1;
@@ -111,30 +110,78 @@ int owner_db_query(const char *path){
 }
 
 //update owner of a given file
-int owner_db_update(const char *path, uid usr){
+int owner_db_update(const char *path, uid_t usr){
   char usrdb_path[PATH_MAX];
-  fullpath("/userdb", db_path);
-  FILE * lp = fopen(db_path, "a+");
-  
-//create temporary path for database ops
-  //creates if nonexistant
+  fullpath("/user_db", usrdb_path);
+  FILE * lp = fopen(usrdb_path, "a+");
+
+  // Create a temp file to write to
   char temp_path[PATH_MAX];
-  fullpath("/usr temp", temp_path);
+  fullpath("/temp", temp_path);
   FILE * temp = fopen(temp_path, "w+");
-  int uid;   // Variables passed by reference into sscanf
-  char line* = NULL;        // char * stores the current line being read
-  char dbpath* = NULL;
-  int size;
-  int read;
-  int user_found = 0;   // Boolean for determining if we need to create a user
-  while ((read =fgets(line, size, lp)) != NULL) { 
-  //fgets with an empty line and size should return number of bytes read
-  if (sscanf(line, "%d\t%s\n", &uid, &dbpath) != 2) {
-  	if(strcmp(path, dbpath){
-  	//found our match
-  	return uid;
-  	//
+
+  int uid;   
+  char *db_path = malloc(PATH_MAX + 1);
+  int size = PATH_MAX + 80;
+  char line[size];        
+  int file_found = 0;   
+
+  while (fgets(line, size, lp) != NULL) { 
+    func_log("HERE\n");
+
+    if(sscanf(line, "%d %[^\t\n]", &uid, db_path) != 2) { /* TODO: Error Handling */ }
+
+    char log_path[PATH_MAX];
+    fullpath("/log", log_path);
+    FILE * log = fopen(log_path, "a+");
+    fprintf(log, "DB_Path: %s Path: %s\n", db_path, path);
+    
+
+    if(strncmp(path, db_path, PATH_MAX) == 0 && usr == uid) {
+      fclose(lp);
+      fclose(temp);
+      remove(temp_path);
+      return -1;
+    }
+
+    if(file_found != 0 || (strncmp(path, db_path, PATH_MAX) != 0)) {
+      fputs(line, temp);
+      continue;
+    }
+
+    fprintf(temp, "%d\t%s\n", usr, path);
+    file_found = 1;
+
+    
+    fprintf(log, "User %d now own %s\n", usr, path);
+    fclose(log);
   }
+
+  if(!file_found) {
+
+    char log_path[PATH_MAX];
+    fullpath("/log", log_path);
+    FILE *log = fopen(log_path, "a+");
+
+    fprintf(temp, "%d\t%s\n", usr, path);
+
+    fprintf(log, "New Path: %s", path);
+    fclose(log);
+  }
+
+  fclose(lp);
+  fclose(temp);
+
+  //Swap files
+  char swap_path[PATH_MAX];
+  fullpath("/swap", swap_path); // We just need a path to swap, no file necessary here
+
+  rename(usrdb_path, swap_path); // log -> swap (keep ref to delete later)
+  rename(temp_path, usrdb_path); // temp -> log (what we wrote to is now the real log file)
+  remove(swap_path);	       // delete swap (original log)
+
+  //end of file reached, file not found
+  return 0;
 
 }
 
@@ -269,9 +316,13 @@ int
 ntapfuse_mknod (const char *path, mode_t mode, dev_t dev)
 {
   func_log("mknod called\n");
+
+  uid_t usr = fuse_get_context()->uid;
+  owner_db_update(path, usr);
+
+
   char fpath[PATH_MAX];
   fullpath (path, fpath);
-
   return mknod (fpath, mode, dev) ? -errno : 0;
 }
 
@@ -367,10 +418,16 @@ int
 ntapfuse_chown (const char *path, uid_t uid, gid_t gid)
 {
   func_log("chown called\n");
+  /*
   char fpath[PATH_MAX];
   fullpath (path, fpath);
+  */
 
-  return chown (fpath, uid, gid) ? -errno : 0;
+  uid_t usr = uid;
+  owner_db_update(path, usr);
+
+  return 0;
+  // chown (fpath, uid, gid) ? -errno : 0;
 }
 
 //truncate reduces or expands a file to length # of bytes.
