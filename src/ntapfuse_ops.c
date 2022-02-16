@@ -31,6 +31,7 @@
 
 #include <sys/xattr.h>
 #include <sys/types.h>
+#include <time.h>
 
 /**
  * Appends the path of the root filesystem to the given path, returning
@@ -44,6 +45,9 @@ fullpath (const char *path, char *buf)
   strcpy (buf, basedir);
   strcat (buf, path);
 }
+
+//used to log for the write function
+void log_write(int ret, const char* buf, const char *path);
 
 
 /* The following functions describe FUSE operations. Each operation appends
@@ -201,8 +205,11 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
 {
   char fpath[PATH_MAX];
   fullpath (path, fpath);
-
-  return pwrite (fi->fh, buf, size, off) < 0 ? -errno : size;
+  int ret = pwrite (fi->fh, buf, size, off) < 0 ? -errno : size;
+  //log the results of the write 
+  log_write(ret,buf,path);
+  return ret; 
+  // return pwrite (fi->fh, buf, size, off) < 0 ? -errno : size;
 }
 
 int
@@ -322,3 +329,47 @@ ntapfuse_init (struct fuse_conn_info *conn)
 {
   return (fuse_get_context())->private_data;
 }
+
+/*
+  Creates a file (if one doesn't already exist) named log.txt 
+  in the source directory where the executable is located and 
+  writes information regarding an attempted write:
+    -if write was successsful
+    -size of the write
+    -contents desired to be written
+    -date of the write
+    -path of the write 
+*/
+void log_write(int ret, const char* buf, const char *path)
+{
+  //pointer to the file 
+  FILE *fp; 
+  //open the file 
+  fp = fopen("log.txt", "a");
+  //get the time 
+  time_t t; 
+  time(&t);
+  //write was successful 
+  if(ret>=0)
+  {
+    fprintf(fp, "Successfully wrote %d bytes\n",ret ); //write # bytes 
+    fprintf(fp, "Wrote: %s", buf);//what the user wrote 
+    fprintf(fp, "Date: %s", ctime(&t));//date of the write
+    fprintf(fp,"Path: %s\n",path);//file path 
+    fprintf(fp, "\n");//newline for formatting 
+  }
+  //write unsuccessful 
+  else
+  {
+    fprintf(fp, "Unsuccessful Write");//write unsuccessful 
+    fprintf(fp, "Intended to write %s\n ", buf);//write what user intended to write 
+    fprintf(fp, "Date: %s", ctime(&t));//date of the write 
+    fprintf(fp,"Path: %s\n",path);//intended file path 
+    fprintf(fp, "\n");//newline for formatting 
+  }
+  fclose(fp);//close the file 
+}
+
+
+
+
